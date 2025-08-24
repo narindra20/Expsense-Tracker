@@ -1,6 +1,6 @@
 export default function Login() {
   return (
-    <div className="min-h-screen bg-gray-300 flex flex-col">
+    <div className="min-h-screen bg-gray-200 flex flex-col">
 
       <div className="bg-white shadow-sm py-4 px-6">
         <div className="max-w-6xl mx-auto flex items-center">
