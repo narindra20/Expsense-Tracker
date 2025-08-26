@@ -1,7 +1,10 @@
 import { useState } from 'react';
 import axios from 'axios';
+import { useNavigate, Link } from 'react-router-dom';
+
 
 export default function SignUp() {
+  const navigate = useNavigate();
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
@@ -20,6 +23,7 @@ export default function SignUp() {
 
       if (response.data.success) {
         setMessage('Compte créé avec succès !');
+        navigate('/');
         //Rediriger Login
       } else {
         setMessage(response.data.message || 'Erreur lors de la création du compte');
@@ -128,9 +132,10 @@ export default function SignUp() {
       )}
 
       <div className="text-center mt-4">
-        <a href="#" className="text-gray-600 text-sm hover:underline">
-          Vous avez déjà un compte ?
-        </a>
+      <Link to="/" className="text-gray-600 text-sm hover:underline">
+           Vous avez déjà un compte ?
+      </Link>
+
       </div>
     </div>
   );
