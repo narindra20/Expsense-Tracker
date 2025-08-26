@@ -52,6 +52,8 @@ app.post('/login', async (req, res) => {
     const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
     if (result.rows.length === 0) return res.json({ success: false });
 
+    
+
     const user = result.rows[0];
     const match = await bcrypt.compare(password, user.password);
     if (!match) return res.json({ success: false });
