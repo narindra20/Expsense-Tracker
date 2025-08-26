@@ -7,12 +7,12 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Config PostgreSQL
+// Configuration PostgreSQL
 const pool = new pg.Pool({
-  user: 'ton_user',
+  user: 'postgres',
   host: 'localhost',
-  database: 'expense_tracker',
-  password: 'ton_password',
+  database: 'personal_expense_tracker',
+  password: 'angela',
   port: 5432,
 });
 
