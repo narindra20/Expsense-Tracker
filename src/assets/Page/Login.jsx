@@ -21,7 +21,7 @@ export default function Login() {
           </p>
         </div>
 
-        {/**FORMULAIRE*/}
+        {/**FORMULAIRE DE CONNEXION*/}
         <div className="bg-white shadow-xl rounded-lg p-10 w-full max-w-md mt-10">
           <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">CONNEXION</h2>
           <form className="flex flex-col gap-4">
