@@ -1,86 +1,68 @@
-const express = require("express");
-const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
-const prisma = require("../prisma");
+import express from 'express';
+import cors from 'cors';
+import pg from 'pg';
+import bcrypt from 'bcrypt';
 
-const router = express.Router();
-const SECRET = "supersecretkey"; 
+const app = express();
+app.use(cors());
+app.use(express.json());
 
-router.post("/signup", async (req, res) => {
-  const { email, password } = req.body;
+// Config PostgreSQL
+const pool = new pg.Pool({
+  user: 'ton_user',
+  host: 'localhost',
+  database: 'expense_tracker',
+  password: 'ton_password',
+  port: 5432,
+});
+
+// ======================= SIGNUP =======================
+app.post('/signup', async (req, res) => {
+  const { firstName, lastName, email, password } = req.body;
+
+  if (!firstName || !lastName || !email || !password) {
+    return res.json({ success: false, message: 'Tous les champs sont requis' });
+  }
 
   try {
-    
-    const userExist = await prisma.user.findUnique({ where: { email } });
-
-    if (userExist) {
-      return res.status(400).json({ error: "Utilisateur déjà existant" });
-    }
-
-
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    
-    const newUser = await prisma.user.create({
-      data: { email, password: hashedPassword },
-    });
-
-    
-    const token = jwt.sign({ id: newUser.id, email: newUser.email }, SECRET, { expiresIn: "1h" });
-
-    res.json({
-      message: "Utilisateur créé avec succès",
-      token,
-      redirectTo: "/dashboard"
-    });
-
+    const query = `
+      INSERT INTO users (first_name, last_name, email, password)
+      VALUES ($1, $2, $3, $4)
+      RETURNING id
+    `;
+    await pool.query(query, [firstName, lastName, email, hashedPassword]);
+    res.json({ success: true });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Erreur serveur" });
+    if (err.code === '23505') { // violation de contrainte UNIQUE
+      res.json({ success: false, message: 'Email déjà utilisé' });
+    } else {
+      console.error(err);
+      res.json({ success: false, message: 'Erreur serveur' });
+    }
   }
 });
 
-
-router.post("/login", async (req, res) => {
+// ======================= LOGIN =======================
+app.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    const user = await prisma.user.findUnique({ where: { email } });
+    const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+    if (result.rows.length === 0) return res.json({ success: false });
 
-    if (!user) {
-      return res.status(400).json({ error: "le mot de passe ou le username est fausse" });
-    }
+    
 
-    const valid = await bcrypt.compare(password, user.password);
-    if (!valid) {
-      return res.status(400).json({ error: "le mot de passe ou le username est fausse" });
-    }
+    const user = result.rows[0];
+    const match = await bcrypt.compare(password, user.password);
+    if (!match) return res.json({ success: false });
 
-    const token = jwt.sign({ id: user.id, email: user.email }, SECRET, { expiresIn: "1h" });
-
-    res.json({
-      message: "Connexion réussie",
-      token,
-      redirectTo: "/dashboard"
-    });
-
+    res.json({ success: true, user: { id: user.id, firstName: user.first_name, email: user.email } });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Erreur serveur" });
+    res.json({ success: false });
   }
 });
 
-
-router.get("/me", async (req, res) => {
-  const token = req.headers["authorization"]?.split(" ")[1];
-  if (!token) return res.status(401).json({ error: "Pas de token fourni" });
-
-  try {
-    const decoded = jwt.verify(token, SECRET);
-    res.json({ message: "Bienvenue utilisateur", user: decoded });
-  } catch (err) {
-    res.status(401).json({ error: "Token invalide" });
-  }
-});
-
-module.exports = router;
+app.listen(5000, () => console.log('Server running on http://localhost:5000'));
