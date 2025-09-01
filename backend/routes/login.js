@@ -1,27 +1,15 @@
-import express from 'express';
-import cors from 'cors';
-import pg from 'pg';
-import bcrypt from 'bcrypt';
+import express from "express";
+import bcrypt from "bcrypt";
+import pool from "../db.js"; // Connexion PostgreSQL
 
-const app = express();
-app.use(cors());
-app.use(express.json());
-
-// Configuration PostgreSQL
-const pool = new pg.Pool({
-  user: 'postgres',
-  host: 'localhost',
-  database: 'personal_expense_tracker',
-  password: 'angela',
-  port: 5432,
-});
+const router = express.Router();
 
 // ======================= SIGNUP =======================
-app.post('/signup', async (req, res) => {
+router.post("/signup", async (req, res) => {
   const { firstName, lastName, email, password } = req.body;
 
   if (!firstName || !lastName || !email || !password) {
-    return res.json({ success: false, message: 'Tous les champs sont requis' });
+    return res.json({ success: false, message: "Tous les champs sont requis" });
   }
 
   try {
@@ -33,36 +21,42 @@ app.post('/signup', async (req, res) => {
       RETURNING id
     `;
     await pool.query(query, [firstName, lastName, email, hashedPassword]);
+
     res.json({ success: true });
   } catch (err) {
-    if (err.code === '23505') { // violation de contrainte UNIQUE
-      res.json({ success: false, message: 'Email déjà utilisé' });
+    if (err.code === "23505") {
+      res.json({ success: false, message: "Email déjà utilisé" });
     } else {
       console.error(err);
-      res.json({ success: false, message: 'Erreur serveur' });
+      res.json({ success: false, message: "Erreur serveur" });
     }
   }
 });
 
 // ======================= LOGIN =======================
-app.post('/login', async (req, res) => {
+router.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
-    if (result.rows.length === 0) return res.json({ success: false });
-
-    
+    const result = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
+    if (result.rows.length === 0) {
+      return res.json({ success: false, message: "Email ou mot de passe incorrect" });
+    }
 
     const user = result.rows[0];
     const match = await bcrypt.compare(password, user.password);
-    if (!match) return res.json({ success: false });
+    if (!match) {
+      return res.json({ success: false, message: "Email ou mot de passe incorrect" });
+    }
 
-    res.json({ success: true, user: { id: user.id, firstName: user.first_name, email: user.email } });
+    res.json({
+      success: true,
+      user: { id: user.id, firstName: user.first_name, email: user.email }
+    });
   } catch (err) {
     console.error(err);
-    res.json({ success: false });
+    res.json({ success: false, message: "Erreur serveur" });
   }
 });
 
-app.listen(5000, () => console.log('Server running on http://localhost:5000'));
+export default router;
