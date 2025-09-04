@@ -1,7 +1,6 @@
 import jwt from "jsonwebtoken";
 
-// Clé secrète pour vérifier le JWT
-const JWT_SECRET = "Fitiavana"; 
+const JWT_SECRET = "Fitiavana"; // clé secrète
 
 export const authenticateToken = (req, res, next) => {
   const authHeader = req.headers["authorization"];

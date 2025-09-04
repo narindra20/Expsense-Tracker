@@ -1,20 +1,11 @@
 import express from "express";
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken"; 
-import pool from "../db.js"; 
-import backendRouter from "./backend.js";
-
-const app = express();
-app.use("/auth", backendRouter); 
-app.listen(5000, () => console.log("Serveur démarré sur le port 5000"));
-import pool from "../db.js"; 
+import jwt from "jsonwebtoken";
+import pool from "../db.js";
+import { authenticateToken } from "../middleware/middleware.js";
 
 const router = express.Router();
-
-const JWT_SECRET = "Fitiavana"; 
-
-
-router.use(express.json());
+const JWT_SECRET = "Fitiavana";
 
 // ======================= SIGNUP =======================
 router.post("/signup", async (req, res) => {
@@ -55,17 +46,12 @@ router.post("/login", async (req, res) => {
       return res.json({ success: false, message: "Email ou mot de passe incorrect" });
     }
 
-    // Génération du JWT
-    const token = jwt.sign(
-      { userId: user.id }, // Payload avec l'ID utilisateur
-      JWT_SECRET, // Clé secrète
-      { expiresIn: "1h" } // Expiration du token (1 heure)
-    );
+    const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: "1h" });
 
     res.json({
       success: true,
       user: { id: user.id, firstName: user.first_name, email: user.email },
-      token // Envoi du token dans la réponse
+      token,
     });
   } catch (err) {
     console.error(err);
@@ -73,6 +59,9 @@ router.post("/login", async (req, res) => {
   }
 });
 
-
+// ======================= ROUTE PROTÉGÉE =======================
+router.get("/dashboard", authenticateToken, (req, res) => {
+  res.json({ message: `Bienvenue utilisateur ${req.user.userId}` });
+});
 
 export default router;

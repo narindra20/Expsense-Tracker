@@ -1,20 +1,19 @@
-import { useState } from 'react';
-import axios from 'axios';
-import { useNavigate, Link } from 'react-router-dom';
-
+import { useState } from "react";
+import axios from "axios";
+import { useNavigate, Link } from "react-router-dom";
 
 export default function SignUp() {
   const navigate = useNavigate();
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [message, setMessage] = useState('');
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [message, setMessage] = useState("");
 
   const handleSignup = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post('http://localhost:5000/signup', {
+      const response = await axios.post("http://localhost:5000/signup", {
         firstName,
         lastName,
         email,
@@ -22,24 +21,22 @@ export default function SignUp() {
       });
 
       if (response.data.success) {
-        setMessage('Compte créé avec succès !');
-        navigate('/');
-        //Rediriger Login
+        setMessage("Compte créé avec succès !");
+        navigate("/");
       } else {
-        setMessage(response.data.message || 'Erreur lors de la création du compte');
+        setMessage(response.data.message || "Erreur lors de la création du compte");
       }
     } catch (err) {
       console.error(err);
-      setMessage('Erreur serveur');
+      setMessage("Erreur serveur");
     }
   };
 
   return (
-    <div className="bg-white shadow-xl rounded-lg p-10 w-full max-w-md mt-4 ml-110">
+    <div className="bg-white shadow-xl rounded-lg p-10 w-full max-w-md mt-10 mx-auto">
       <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">
         Créer un nouveau compte
       </h2>
-
       <form className="flex flex-col gap-4" onSubmit={handleSignup}>
         <div className="flex gap-4">
           <input
@@ -47,95 +44,46 @@ export default function SignUp() {
             placeholder="Prénom"
             value={firstName}
             onChange={(e) => setFirstName(e.target.value)}
-            className="w-1/2 px-4 py-3 rounded-md border border-gray-300"
+            className="w-1/2 px-4 py-3 border rounded-md"
             required
           />
           <input
             type="text"
-            placeholder="Nom de famille"
+            placeholder="Nom"
             value={lastName}
             onChange={(e) => setLastName(e.target.value)}
-            className="w-1/2 px-4 py-3 rounded-md border border-gray-300"
+            className="w-1/2 px-4 py-3 border rounded-md"
             required
           />
         </div>
-
         <input
           type="email"
-          placeholder="Numéro de portable ou e-mail"
+          placeholder="E-mail"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="px-4 py-3 rounded-md border border-gray-300"
+          className="px-4 py-3 border rounded-md"
           required
         />
         <input
           type="password"
-          placeholder="Nouveau mot de passe"
+          placeholder="Mot de passe"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="px-4 py-3 rounded-md border border-gray-300"
+          className="px-4 py-3 border rounded-md"
           required
         />
-
-        {/* Les champs suivants sont décoratifs pour l’instant */}
-        <label className="text-sm text-gray-700 font-medium">Anniversaire</label>
-        <div className="flex gap-2">
-          <select className="w-1/3 px-2 py-2 border border-gray-300 rounded-md">
-            <option>Jour</option>
-            {[...Array(31)].map((_, i) => (
-              <option key={i}>{i + 1}</option>
-            ))}
-          </select>
-          <select className="w-1/3 px-2 py-2 border border-gray-300 rounded-md">
-            <option>Mois</option>
-            {[
-              "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
-              "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
-            ].map((mois, i) => (
-              <option key={i}>{mois}</option>
-            ))}
-          </select>
-          <select className="w-1/3 px-2 py-2 border border-gray-300 rounded-md">
-            <option>Année</option>
-            {Array.from({ length: 100 }, (_, i) => (
-              <option key={i}>{2025 - i}</option>
-            ))}
-          </select>
-        </div>
-
-        <label className="text-sm text-gray-700 font-medium">Genre</label>
-        <div className="flex gap-4">
-          <label className="flex items-center gap-2">
-            <input type="radio" name="genre" value="Femme" />
-            Femme
-          </label>
-          <label className="flex items-center gap-2">
-            <input type="radio" name="genre" value="Homme" />
-            Homme
-          </label>
-          <label className="flex items-center gap-2">
-            <input type="radio" name="genre" value="Personnalisé" />
-            Personnalisé
-          </label>
-        </div>
-
         <button
           type="submit"
-          className="bg-gray-500 hover:bg-gray-500 text-white font-bold py-3 rounded-md transition-colors mt-4"
+          className="bg-gray-500 text-white font-bold py-3 rounded-md"
         >
           S’inscrire
         </button>
       </form>
-
-      {message && (
-        <div className="text-center mt-4 text-red-500 font-semibold">{message}</div>
-      )}
-
+      {message && <div className="text-center mt-4 text-red-500">{message}</div>}
       <div className="text-center mt-4">
-      <Link to="/" className="text-gray-600 text-sm hover:underline">
-           Vous avez déjà un compte ?
-      </Link>
-
+        <Link to="/" className="text-gray-600 text-sm hover:underline">
+          Vous avez déjà un compte ?
+        </Link>
       </div>
     </div>
   );
