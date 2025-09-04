@@ -7,7 +7,7 @@ import { authenticateToken } from "../middleware/middleware.js";
 const router = express.Router();
 const JWT_SECRET = "Fitiavana";
 
-// ======================= SIGNUP =======================
+//SIGNUP 
 router.post("/signup", async (req, res) => {
   const { firstName, lastName, email, password } = req.body;
   if (!firstName || !lastName || !email || !password) {
@@ -32,7 +32,7 @@ router.post("/signup", async (req, res) => {
   }
 });
 
-// ======================= LOGIN =======================
+//LOGIN
 router.post("/login", async (req, res) => {
   const { email, password } = req.body;
   try {
@@ -59,7 +59,7 @@ router.post("/login", async (req, res) => {
   }
 });
 
-// ======================= ROUTE PROTÉGÉE =======================
+// ROUTE PROTÉGÉE 
 router.get("/dashboard", authenticateToken, (req, res) => {
   res.json({ message: `Bienvenue utilisateur ${req.user.userId}` });
 });
