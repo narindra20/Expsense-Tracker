@@ -1,20 +1,20 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Login from "./assets/Page/Login";
-import SignUp from "./assets/Page/SignUp";
-import Dashboard from "./assets/Page/Dashboard";
-import PrivateRoute from "./assets/Page/PrivateRoute";
+import Login from "./assets/Authentification/Login";
+import SignUp from "./assets/Authentification/SignUp";
+import PrivateRoute from "./assets/Authentification/PrivateRoute";
+import ExpenseTracker from "./assets/Expense/ExpenseTracker";
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Login />} />
-        <Route path="/signup" element={<SignUp />} />
+        <Route path="/signup" element={<SignUp/>} />
         <Route
           path="/dashboard"
           element={
             <PrivateRoute>
-              <Dashboard />
+              <ExpenseTracker/>
             </PrivateRoute>
           }
         />
