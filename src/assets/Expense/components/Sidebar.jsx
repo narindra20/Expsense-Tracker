@@ -20,6 +20,7 @@ function Sidebar({ activeSection, setActiveSection, isDarkMode, toggleDarkMode }
     { id: "add", label: "Ajouter une Dépense", icon: <PlusCircle /> },
     { id: "categories", label: "Catégories", icon: <Tag /> },
     { id: "reports", label: "Rapports", icon: <BarChart /> },
+    { id: "settings", label: "Paramètres", icon: <Lock/> },
   ];
 
   const handleLogout = () => {
@@ -35,7 +36,7 @@ function Sidebar({ activeSection, setActiveSection, isDarkMode, toggleDarkMode }
         <button
           onClick={() => setActiveSection(item.id)}
           className={`flex items-center w-full p-3 rounded-lg transition-colors
-            ${isActive ? "bg-indigo-500 text-white dark:bg-indigo-600" : "hover:bg-indigo-100 dark:hover:bg-gray-700"}`}
+            ${isActive ? "bg-gray-500 text-white dark:bg-indigo-600" : "hover:bg-indigo-100 dark:hover:bg-gray-700"}`}
         >
           <span className="mr-3 text-indigo-500 dark:text-indigo-300">{item.icon}</span>
           <span>{item.label}</span>
