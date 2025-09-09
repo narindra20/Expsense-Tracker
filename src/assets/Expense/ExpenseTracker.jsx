@@ -23,7 +23,6 @@ function ExpenseTracker() {
     else document.documentElement.classList.remove("dark");
     localStorage.setItem("darkMode", isDarkMode);
   }, [isDarkMode]);
-  
 
   const toggleDarkMode = () => setIsDarkMode(!isDarkMode);
 

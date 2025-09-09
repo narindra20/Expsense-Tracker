@@ -35,7 +35,7 @@ function Sidebar({ activeSection, setActiveSection, isDarkMode, toggleDarkMode }
         <button
           onClick={() => setActiveSection(item.id)}
           className={`flex items-center w-full p-3 rounded-lg transition-colors
-            ${isActive ? "bg-indigo-500 text-white" : "hover:bg-indigo-100 dark:hover:bg-gray-700"}`}
+            ${isActive ? "bg-indigo-500 text-white dark:bg-indigo-600" : "hover:bg-indigo-100 dark:hover:bg-gray-700"}`}
         >
           <span className="mr-3 text-indigo-500 dark:text-indigo-300">{item.icon}</span>
           <span>{item.label}</span>
@@ -46,7 +46,6 @@ function Sidebar({ activeSection, setActiveSection, isDarkMode, toggleDarkMode }
 
   return (
     <div className="w-64 h-full flex flex-col p-4 bg-gray-200 dark:bg-gray-800 text-gray-900 dark:text-white transition-colors">
-      
       <h2 className="text-xl font-bold text-indigo-600 dark:text-indigo-400 mb-6">
         Mon Budget
       </h2>
@@ -75,7 +74,6 @@ function Sidebar({ activeSection, setActiveSection, isDarkMode, toggleDarkMode }
         <Lock className="w-5 h-5 mr-3" />
         <span>Déconnexion</span>
       </button>
-
     </div>
   );
 }
