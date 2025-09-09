@@ -1,9 +1,7 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  content: [
-    "./src/**/*.{js,jsx,ts,tsx}",
-  ],
-  darkMode: 'class', // Cette ligne est ESSENTIELLE
+  darkMode: 'class', // indispensable pour le toggle
+  content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'], // Vite doit scanner tous les fichiers
   theme: {
     extend: {},
   },
