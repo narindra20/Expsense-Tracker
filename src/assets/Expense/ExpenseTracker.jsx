@@ -5,6 +5,8 @@ import ExpensesList from "./components/ExpensesList";
 import AddExpense from "./components/AddExpense";
 import Categories from "./components/Categories";
 import Reports from "./components/Reports";
+import Settings from "./components/Settings";
+
 
 function ExpenseTracker() {
   const [activeSection, setActiveSection] = useState("dashboard");
@@ -60,6 +62,9 @@ function ExpenseTracker() {
         return <Reports expenses={expenses} />;
       default:
         return <Dashboard expenses={expenses} totalExpenses={totalExpenses} />;
+      case "settings":
+        return <Settings />;
+        
     }
   };
 
