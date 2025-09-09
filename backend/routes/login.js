@@ -2,52 +2,50 @@ import express from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import pool from "../db.js";
-import { authenticateToken } from "../middleware/middleware.js";
+import { authenticateToken } from "../middleware/middleware.js"
 
 const router = express.Router();
 const JWT_SECRET = "Fitiavana";
 
-//SIGNUP 
+// SIGNUP
 router.post("/signup", async (req, res) => {
   const { firstName, lastName, email, password } = req.body;
-  if (!firstName || !lastName || !email || !password) {
+  if (!firstName || !lastName || !email || !password)
     return res.json({ success: false, message: "Tous les champs sont requis" });
-  }
+
   try {
+    // Vérifie si l'email existe déjà
+    const exist = await pool.query("SELECT * FROM users WHERE email=$1", [email]);
+    if (exist.rows.length > 0)
+      return res.json({ success: false, message: "Email déjà utilisé" });
+
     const hashedPassword = await bcrypt.hash(password, 10);
-    const query = `
-      INSERT INTO users (first_name, last_name, email, password)
-      VALUES ($1, $2, $3, $4)
-      RETURNING id
-    `;
-    await pool.query(query, [firstName, lastName, email, hashedPassword]);
-    res.json({ success: true });
+    await pool.query(
+      "INSERT INTO users (first_name, last_name, email, password) VALUES ($1,$2,$3,$4)",
+      [firstName, lastName, email, hashedPassword]
+    );
+
+    res.json({ success: true, message: "Compte créé avec succès" });
   } catch (err) {
-    if (err.code === "23505") {
-      res.json({ success: false, message: "Email déjà utilisé" });
-    } else {
-      console.error(err);
-      res.json({ success: false, message: "Erreur serveur" });
-    }
+    console.error(err);
+    res.json({ success: false, message: "Erreur serveur" });
   }
 });
 
-//LOGIN
+// LOGIN
 router.post("/login", async (req, res) => {
   const { email, password } = req.body;
   try {
-    const result = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
-    if (result.rows.length === 0) {
+    const result = await pool.query("SELECT * FROM users WHERE email=$1", [email]);
+    if (result.rows.length === 0)
       return res.json({ success: false, message: "Email ou mot de passe incorrect" });
-    }
+
     const user = result.rows[0];
     const match = await bcrypt.compare(password, user.password);
-    if (!match) {
+    if (!match)
       return res.json({ success: false, message: "Email ou mot de passe incorrect" });
-    }
 
     const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: "1h" });
-
     res.json({
       success: true,
       user: { id: user.id, firstName: user.first_name, email: user.email },
@@ -59,7 +57,7 @@ router.post("/login", async (req, res) => {
   }
 });
 
-// ROUTE PROTÉGÉE 
+// ROUTE PROTÉGÉE
 router.get("/dashboard", authenticateToken, (req, res) => {
   res.json({ message: `Bienvenue utilisateur ${req.user.userId}` });
 });
