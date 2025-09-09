@@ -22,14 +22,8 @@ export default function Settings() {
 
   const fetchUserData = async () => {
     try {
-      // Simuler un appel API pour récupérer les données utilisateur
-      // En pratique, vous utiliseriez votre endpoint API
+    
       const token = localStorage.getItem('token');
-      // const response = await fetch('/api/auth/me', {
-      //   headers: { 'Authorization': `Bearer ${token}` }
-      // });
-      // const userData = await response.json();
-      // setUserData(userData);
     } catch (error) {
       console.error('Erreur lors de la récupération des données:', error);
     }

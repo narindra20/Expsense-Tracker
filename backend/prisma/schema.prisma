@@ -15,10 +15,34 @@ datasource db {
 
 
 model User {
-  id        Int     @id @default(autoincrement())
-  firstName String  @map("first_name")
-  lastName  String  @map("last_name")
-  email     String  @unique
+  id        Int       @id @default(autoincrement())
+  firstName String    @map("first_name")
+  lastName  String    @map("last_name")
+  email     String    @unique
   password  String
+  expenses  Expense[]
 }
+
+model Category {
+  id       Int       @id @default(autoincrement())
+  name     String    @unique
+  expenses Expense[]
+}
+
+model Expense {
+  id          Int       @id @default(autoincrement())
+  amount      Float
+  date        DateTime?   // pour dépenses ponctuelles
+  categoryId  Int
+  category    Category   @relation(fields: [categoryId], references: [id])
+  userId      Int
+  user        User       @relation(fields: [userId], references: [id])
+  description String?
+  type        String     @default("ponctuelle") // "ponctuelle" ou "recurrente"
+  receipt     String?    // chemin du fichier reçu
+  createdAt   DateTime   @default(now())
+  startDate   DateTime?  // uniquement pour récurrente
+  endDate     DateTime?  // uniquement pour récurrente
+}
+
 
