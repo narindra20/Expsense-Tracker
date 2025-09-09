@@ -29,25 +29,54 @@ export default function Settings() {
     }
   };
 
-  const handleChangePassword = (e) => {
-    e.preventDefault();
-    
-    if (newPassword !== confirmPassword) {
-      setMessage({ text: "Les nouveaux mots de passe ne correspondent pas !", type: "error" });
+  const handleChangePassword = async (e) => {
+  e.preventDefault();
+
+  if (newPassword !== confirmPassword) {
+    setMessage({ text: "Les nouveaux mots de passe ne correspondent pas !", type: "error" });
+    return;
+  }
+
+  if (newPassword.length < 6) {
+    setMessage({ text: "Le mot de passe doit contenir au moins 6 caractères.", type: "error" });
+    return;
+  }
+
+  try {
+    const token = localStorage.getItem("token"); // récupère le token JWT
+    if (!token) {
+      setMessage({ text: "Vous devez être connecté.", type: "error" });
       return;
     }
-    
-    if (newPassword.length < 6) {
-      setMessage({ text: "Le mot de passe doit contenir au moins 6 caractères.", type: "error" });
-      return;
+
+    const res = await fetch("http://localhost:5000/change-password", {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`, // Auth obligatoire
+      },
+      body: JSON.stringify({
+        oldPassword: currentPassword,
+        newPassword: newPassword,
+      }),
+    });
+
+    const data = await res.json();
+
+    if (res.ok && data.success) {
+      setMessage({ text: "Mot de passe changé avec succès ✅", type: "success" });
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } else {
+      setMessage({ text: data.message || "Erreur lors du changement de mot de passe", type: "error" });
     }
-    
-    // Ici, tu pourrais appeler ton API pour changer le mot de passe
-    setMessage({ text: "Mot de passe changé avec succès !", type: "success" });
-    setCurrentPassword("");
-    setNewPassword("");
-    setConfirmPassword("");
-  };
+  } catch (error) {
+    console.error(error);
+    setMessage({ text: "Erreur serveur, réessayez plus tard.", type: "error" });
+  }
+};
+
 
   const handleDarkModeToggle = () => {
     const newDarkModeState = !darkMode;

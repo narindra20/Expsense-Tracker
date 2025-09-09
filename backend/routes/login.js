@@ -64,27 +64,42 @@ router.get("/dashboard", authenticateToken, (req, res) => {
 // ===== CHANGE PASSWORD =====
 router.patch("/change-password", authenticateToken, async (req, res) => {
   const { oldPassword, newPassword } = req.body;
-  if (!oldPassword || !newPassword)
+
+  if (!oldPassword || !newPassword) {
+    console.log("Champs manquants :", req.body);
     return res.status(400).json({ success: false, message: "Champs manquants" });
+  }
 
   try {
+    // Vérifier que l'utilisateur existe
     const user = await prisma.user.findUnique({ where: { id: req.user.userId } });
-    if (!user)
+    if (!user) {
+      console.log("Utilisateur non trouvé pour l'ID :", req.user.userId);
       return res.status(404).json({ success: false, message: "Utilisateur non trouvé" });
+    }
+    console.log("Utilisateur trouvé :", user.email);
 
+    // Comparer l'ancien mot de passe
     const match = await bcrypt.compare(oldPassword, user.password);
-    if (!match)
+    if (!match) {
+      console.log("Mot de passe actuel incorrect pour l'utilisateur :", user.email);
       return res.status(401).json({ success: false, message: "Mot de passe actuel incorrect" });
+    }
 
+    // Hasher le nouveau mot de passe
     const hashedPassword = await bcrypt.hash(newPassword, 10);
-    await prisma.user.update({
+    console.log("Nouveau hash :", hashedPassword);
+
+    // Mettre à jour le mot de passe dans la base
+    const updatedUser = await prisma.user.update({
       where: { id: user.id },
       data: { password: hashedPassword },
     });
+    console.log("Mot de passe mis à jour pour l'utilisateur :", updatedUser.email);
 
     res.json({ success: true, message: "Mot de passe changé avec succès" });
   } catch (err) {
-    console.error(err);
+    console.error("Erreur serveur change-password :", err);
     res.status(500).json({ success: false, message: "Erreur serveur" });
   }
 });
