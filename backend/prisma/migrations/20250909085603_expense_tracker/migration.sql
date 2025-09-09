@@ -1,3 +1,4 @@
+git commit -m "Résolution des conflits et merge"
 -- CreateTable
 CREATE TABLE "public"."User" (
     "id" SERIAL NOT NULL,
