@@ -1,10 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
-function AddExpense({ categories, onAdd, isDarkMode }) {
+function AddExpense({ categories = [], onAdd, isDarkMode }) {
   const initial = {
     title: "",
     amount: "",
-    category: categories[0] || "",
+    category: categories.length > 0 ? (categories[0].id || categories[0]) : "",
     date: new Date().toISOString().split("T")[0],
     type: "Ponctuelle",
     startDate: "",
@@ -13,60 +13,64 @@ function AddExpense({ categories, onAdd, isDarkMode }) {
   };
 
   const [expense, setExpense] = useState(initial);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (categories.length > 0) {
+      const defaultCategory = categories[0].id ? categories[0].id : categories[0];
+      setExpense(prev => ({ ...prev, category: defaultCategory }));
+    }
+  }, [categories]);
 
   const handleChange = (e) => {
     setExpense({ ...expense, [e.target.name]: e.target.value });
+    setError("");
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!expense.title || !expense.amount) return;
-
-    const token = localStorage.getItem("token");
-    if (!token) return alert("Vous devez être connecté pour ajouter une dépense.");
+    
+    if (!expense.title || !expense.amount || !expense.category) {
+      setError("Veuillez remplir tous les champs obligatoires");
+      return;
+    }
 
     try {
-      const formData = new FormData();
-      formData.append("amount", expense.amount);
-      formData.append("categoryId", expense.category);
-      formData.append("description", expense.description || "");
-      formData.append("type", expense.type);
-      if (expense.type === "Ponctuelle") formData.append("date", expense.date);
-      if (expense.type === "Récurrente") {
-        formData.append("startDate", expense.startDate);
-        if (expense.endDate) formData.append("endDate", expense.endDate);
+      const payload = {
+        title: expense.title,
+        amount: parseFloat(expense.amount),
+        categoryId: parseInt(expense.category),
+        type: expense.type,
+        description: expense.description || ""
+      };
+
+      if (expense.type === "Ponctuelle") {
+        payload.date = expense.date;
+      } else if (expense.type === "Récurrente") {
+        payload.startDate = expense.startDate;
+        if (expense.endDate) payload.endDate = expense.endDate;
       }
 
-      const response = await fetch("http://localhost:5000/api/expenses", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        body: formData,
-      });
-
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.message || "Erreur serveur");
-
-      onAdd(data);
+      await onAdd(payload);
       setExpense(initial);
-    } catch (err) {
-      console.error(err);
-      alert("Erreur lors de l'ajout de la dépense : " + err.message);
+      setError("");
+      alert("Dépense ajoutée avec succès !");
+    } catch (error) {
+      setError(error.message || "Erreur lors de l'ajout de la dépense");
     }
   };
 
   const containerClass = isDarkMode
-    ? "p-6 max-w-3xl mx-auto bg-gray-800 text-white rounded-2xl shadow-lg transition-colors"
-    : "p-6 max-w-3xl mx-auto bg-indigo-50 text-gray-900 rounded-2xl shadow-lg transition-colors";
+    ? "p-6 max-w-3xl mx-auto bg-gray-800 text-white rounded-2xl shadow-lg"
+    : "p-6 max-w-3xl mx-auto bg-indigo-50 text-gray-900 rounded-2xl shadow-lg";
 
   const inputClass = isDarkMode
-    ? "border border-gray-600 bg-gray-700 text-white rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-400 shadow-sm transition"
-    : "border border-gray-300 bg-white text-gray-900 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-400 shadow-sm transition";
+    ? "border border-gray-600 bg-gray-700 text-white rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-400 shadow-sm"
+    : "border border-gray-300 bg-white text-gray-900 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-400 shadow-sm";
 
   const buttonClass = isDarkMode
-    ? "bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-3 rounded-2xl shadow-lg transition transform font-semibold"
-    : "bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white px-6 py-3 rounded-2xl shadow-lg transition transform font-semibold";
+    ? "bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-3 rounded-2xl shadow-lg transition font-semibold"
+    : "bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white px-6 py-3 rounded-2xl shadow-lg transition font-semibold";
 
   return (
     <div className={containerClass}>
@@ -74,12 +78,18 @@ function AddExpense({ categories, onAdd, isDarkMode }) {
         Ajouter une dépense
       </h2>
 
+      {error && (
+        <div className="mb-4 p-3 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-200 rounded">
+          {error}
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="flex flex-wrap gap-4">
           <input
             name="title"
             type="text"
-            placeholder="Titre"
+            placeholder="Titre *"
             value={expense.title}
             onChange={handleChange}
             className={inputClass}
@@ -88,7 +98,8 @@ function AddExpense({ categories, onAdd, isDarkMode }) {
           <input
             name="amount"
             type="number"
-            placeholder="Montant (€)"
+            step="0.01"
+            placeholder="Montant (€) *"
             value={expense.amount}
             onChange={handleChange}
             className={inputClass + " w-40"}
@@ -99,10 +110,17 @@ function AddExpense({ categories, onAdd, isDarkMode }) {
             value={expense.category}
             onChange={handleChange}
             className={inputClass + " w-44"}
+            required
           >
-            {categories.map((c) => (
-              <option key={c} value={c}>{c}</option>
-            ))}
+            {categories.map((category) => {
+              const value = category.id ? category.id : category;
+              const label = category.name ? category.name : category;
+              return (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              );
+            })}
           </select>
         </div>
 
@@ -158,6 +176,7 @@ function AddExpense({ categories, onAdd, isDarkMode }) {
               value={expense.endDate}
               onChange={handleChange}
               className={inputClass}
+              placeholder="Date de fin (optionnelle)"
             />
           </div>
         )}
@@ -172,7 +191,7 @@ function AddExpense({ categories, onAdd, isDarkMode }) {
         />
 
         <button type="submit" className={buttonClass}>
-          Ajouter
+          Ajouter la dépense
         </button>
       </form>
     </div>
