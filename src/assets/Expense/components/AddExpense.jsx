@@ -29,34 +29,39 @@ function AddExpense({ categories = [], onAdd, isDarkMode }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (!expense.title || !expense.amount || !expense.category) {
-      setError("Veuillez remplir tous les champs obligatoires");
-      return;
-    }
+    if (!expense.title || !expense.amount) return;
+
+    const token = localStorage.getItem("token");
+    if (!token) return alert("Vous devez être connecté pour ajouter une dépense.");
 
     try {
-      const payload = {
-        title: expense.title,
-        amount: parseFloat(expense.amount),
-        categoryId: parseInt(expense.category),
-        type: expense.type,
-        description: expense.description || ""
-      };
-
-      if (expense.type === "Ponctuelle") {
-        payload.date = expense.date;
-      } else if (expense.type === "Récurrente") {
-        payload.startDate = expense.startDate;
-        if (expense.endDate) payload.endDate = expense.endDate;
+      const formData = new FormData();
+      formData.append("amount", expense.amount);
+      formData.append("categoryId", expense.category);
+      formData.append("description", expense.description || "");
+      formData.append("type", expense.type);
+      if (expense.type === "Ponctuelle") formData.append("date", expense.date);
+      if (expense.type === "Récurrente") {
+        formData.append("startDate", expense.startDate);
+        if (expense.endDate) formData.append("endDate", expense.endDate);
       }
 
-      await onAdd(payload);
+      const response = await fetch("http://localhost:5000/api/expenses", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Erreur serveur");
+
+      onAdd(data);
       setExpense(initial);
-      setError("");
-      alert("Dépense ajoutée avec succès !");
-    } catch (error) {
-      setError(error.message || "Erreur lors de l'ajout de la dépense");
+    } catch (err) {
+      console.error(err);
+      alert("Erreur lors de l'ajout de la dépense : " + err.message);
     }
   };
 

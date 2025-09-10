@@ -61,7 +61,7 @@ router.get("/dashboard", authenticateToken, (req, res) => {
   res.json({ message: `Bienvenue utilisateur ${req.user.userId}` });
 });
 
-// ===== CHANGE PASSWORD =====
+// ===== CHANGE PASSWORD ======
 router.patch("/change-password", authenticateToken, async (req, res) => {
   const { oldPassword, newPassword } = req.body;
 

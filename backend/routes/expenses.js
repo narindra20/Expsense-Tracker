@@ -1,31 +1,91 @@
-// /backend/routes/expenses.js
 import express from "express";
 import { PrismaClient } from "@prisma/client";
+import multer from "multer";
+import path from "path";
 
 const router = express.Router();
 const prisma = new PrismaClient();
 
-// Récupérer toutes les dépenses d'un utilisateur
+// ================== UPLOAD CONFIG (reçus) ==================
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "uploads/receipts"); // dossier où enregistrer les fichiers
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + path.extname(file.originalname));
+  },
+});
+const upload = multer({ storage });
+
+// ================== GET toutes les dépenses (avec filtres) ==================
 router.get("/", async (req, res) => {
   try {
     const userId = parseInt(req.query.userId);
     if (!userId) return res.status(400).json({ error: "userId requis" });
 
+    const { start, end, category, type } = req.query;
+
+    const filters = { userId };
+
+    if (category) filters.categoryId = parseInt(category);
+    if (type) filters.type = type;
+    if (start && end) {
+      filters.date = {
+        gte: new Date(start),
+        lte: new Date(end),
+      };
+    }
+
     const expenses = await prisma.expense.findMany({
-      where: { userId },
-      include: { category: true }, // inclure infos catégorie
+      where: filters,
+      include: { category: true },
+      orderBy: { createdAt: "desc" },
     });
-    res.json(expenses);
+
+    // ✅ Formatter les catégories pour le front
+    const formatted = expenses.map((e) => ({
+      ...e,
+      category: e.category.name,
+    }));
+
+    res.json(formatted);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Erreur lors du chargement des dépenses" });
   }
 });
 
-// Ajouter une dépense
-router.post("/", async (req, res) => {
+// ================== GET une dépense par ID ==================
+router.get("/:id", async (req, res) => {
   try {
-    const { title, amount, categoryId, type, date, startDate, endDate, description, userId } = req.body;
+    const expense = await prisma.expense.findUnique({
+      where: { id: parseInt(req.params.id) },
+      include: { category: true },
+    });
+
+    if (!expense) return res.status(404).json({ error: "Dépense introuvable" });
+
+    res.json({ ...expense, category: expense.category.name });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Erreur lors de la récupération" });
+  }
+});
+
+// ================== POST créer une dépense ==================
+router.post("/", upload.single("receipt"), async (req, res) => {
+  try {
+    const {
+      title,
+      amount,
+      categoryId,
+      type,
+      date,
+      startDate,
+      endDate,
+      description,
+      userId,
+    } = req.body;
 
     if (!title || !amount || !categoryId || !type || !userId) {
       return res.status(400).json({ error: "Informations manquantes" });
@@ -37,69 +97,84 @@ router.post("/", async (req, res) => {
       categoryId: parseInt(categoryId),
       type,
       description: description || "",
-      userId,
+      userId: parseInt(userId),
+      receipt: req.file ? req.file.filename : null,
     };
 
     if (type === "Ponctuelle") {
-      expenseData.date = date;
+      expenseData.date = date ? new Date(date) : null;
     } else if (type === "Récurrente") {
-      expenseData.startDate = startDate;
-      expenseData.endDate = endDate || null;
+      expenseData.startDate = startDate ? new Date(startDate) : null;
+      expenseData.endDate = endDate ? new Date(endDate) : null;
     }
 
-    const expense = await prisma.expense.create({ data: expenseData });
-    res.status(201).json(expense);
+    const expense = await prisma.expense.create({
+      data: expenseData,
+      include: { category: true },
+    });
+
+    res.status(201).json({ ...expense, category: expense.category.name });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Erreur lors de l'ajout de la dépense" });
   }
 });
 
-// Modifier une dépense
-router.put("/:id", async (req, res) => {
+// ================== PUT modifier une dépense ==================
+router.put("/:id", upload.single("receipt"), async (req, res) => {
   try {
-    const { id } = req.params;
-    const { title, amount, categoryId, type, date, startDate, endDate, description } = req.body;
+    const {
+      title,
+      amount,
+      categoryId,
+      type,
+      date,
+      startDate,
+      endDate,
+      description,
+    } = req.body;
 
     const updatedData = {
       title,
       amount: parseFloat(amount),
       categoryId: parseInt(categoryId),
       type,
-      description,
+      description: description || "",
     };
 
+    if (req.file) updatedData.receipt = req.file.filename;
+
     if (type === "Ponctuelle") {
-      updatedData.date = date;
+      updatedData.date = date ? new Date(date) : null;
       updatedData.startDate = null;
       updatedData.endDate = null;
     } else if (type === "Récurrente") {
-      updatedData.startDate = startDate;
-      updatedData.endDate = endDate || null;
+      updatedData.startDate = startDate ? new Date(startDate) : null;
+      updatedData.endDate = endDate ? new Date(endDate) : null;
       updatedData.date = null;
     }
 
     const expense = await prisma.expense.update({
-      where: { id: parseInt(id) },
+      where: { id: parseInt(req.params.id) },
       data: updatedData,
+      include: { category: true },
     });
 
-    res.json(expense);
+    res.json({ ...expense, category: expense.category.name });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Erreur lors de la modification de la dépense" });
+    res.status(500).json({ error: "Erreur lors de la modification" });
   }
 });
 
-// Supprimer une dépense
+// ================== DELETE supprimer une dépense ==================
 router.delete("/:id", async (req, res) => {
   try {
-    const { id } = req.params;
-    await prisma.expense.delete({ where: { id: parseInt(id) } });
+    await prisma.expense.delete({ where: { id: parseInt(req.params.id) } });
     res.status(204).send();
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Erreur lors de la suppression de la dépense" });
+    res.status(500).json({ error: "Erreur lors de la suppression" });
   }
 });
 
