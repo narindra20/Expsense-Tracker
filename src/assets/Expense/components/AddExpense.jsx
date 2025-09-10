@@ -19,42 +19,45 @@ function AddExpense({ categories, onAdd, isDarkMode }) {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!expense.title || !expense.amount) return;
+  e.preventDefault();
+  if (!expense.title || !expense.amount) return;
 
-    const token = localStorage.getItem("token");
-    if (!token) return alert("Vous devez être connecté pour ajouter une dépense.");
+  const token = localStorage.getItem("token");
+  if (!token) return alert("Vous devez être connecté pour ajouter une dépense.");
 
-    try {
-      const formData = new FormData();
-      formData.append("amount", expense.amount);
-      formData.append("categoryId", expense.category);
-      formData.append("description", expense.description || "");
-      formData.append("type", expense.type);
-      if (expense.type === "Ponctuelle") formData.append("date", expense.date);
-      if (expense.type === "Récurrente") {
-        formData.append("startDate", expense.startDate);
-        if (expense.endDate) formData.append("endDate", expense.endDate);
-      }
+  try {
+    const response = await fetch("http://localhost:5000/api/expenses", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${token}`,
+  },
+  body: JSON.stringify({
+    title: expense.title,
+    amount: parseFloat(expense.amount),
+    categoryId: parseInt(expense.category), // assure-toi que c'est un int
+    description: expense.description || "",
+    type: expense.type,
+    date: expense.type === "Ponctuelle" ? expense.date : null,
+    startDate: expense.type === "Récurrente" ? expense.startDate : null,
+    endDate: expense.type === "Récurrente" ? expense.endDate || null : null,
+    userId: 1 // pour tester
+  }),
+});
 
-      const response = await fetch("http://localhost:5000/api/expenses", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        body: formData,
-      });
 
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.message || "Erreur serveur");
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "Erreur serveur");
 
-      onAdd(data);
-      setExpense(initial);
-    } catch (err) {
-      console.error(err);
-      alert("Erreur lors de l'ajout de la dépense : " + err.message);
-    }
-  };
+    onAdd(data);
+    setExpense(initial);
+  } catch (err) {
+    console.error(err);
+    alert("Erreur lors de l'ajout de la dépense : " + err.message);
+  }
+};
+
+
 
   const containerClass = isDarkMode
     ? "p-6 max-w-3xl mx-auto bg-gray-800 text-white rounded-2xl shadow-lg transition-colors"
