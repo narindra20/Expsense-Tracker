@@ -5,6 +5,7 @@ import ExpensesList from "./components/ExpensesList";
 import AddExpense from "./components/AddExpense";
 import Categories from "./components/Categories";
 import Reports from "./components/Reports";
+import AddIncome from "./components/AddIncome";
 import Settings from "./components/Settings";
 
 function ExpenseTracker() {
@@ -18,6 +19,13 @@ function ExpenseTracker() {
   const [isDarkMode, setIsDarkMode] = useState(
     () => localStorage.getItem("darkMode") === "true"
   );
+
+  const [incomes, setIncomes] = useState([]);
+
+const handleAddIncome = (incomeData) => {
+  setIncomes([...incomes, { id: incomes.length + 1, ...incomeData }]);
+};
+
 
   useEffect(() => {
     if (isDarkMode) document.documentElement.classList.add("dark");
@@ -61,12 +69,15 @@ function ExpenseTracker() {
         return <AddExpense categories={categories} onAdd={handleAddExpense} isDarkMode={isDarkMode} />;
       case "categories":
         return <Categories categories={categories} setCategories={setCategories} isDarkMode={isDarkMode} />;
+      case "addIncome":
+        return <AddIncome onAdd={handleAddIncome} isDarkMode={isDarkMode} />;
       case "reports":
         return <Reports expenses={expenses} isDarkMode={isDarkMode} />;
       case "settings":
         return <Settings isDarkMode={isDarkMode} />;
       default:
         return <Dashboard expenses={expenses} totalExpenses={totalExpenses} isDarkMode={isDarkMode} />;
+
     }
   };
 
@@ -95,6 +106,8 @@ function ExpenseTracker() {
       </div>
     </div>
   );
+
+  
 }
 
 export default ExpenseTracker;
