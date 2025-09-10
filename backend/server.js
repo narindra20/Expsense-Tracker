@@ -4,6 +4,7 @@ import cors from "cors";
 import authRoutes from "./routes/login.js";
 import categoryRoutes from "./routes/categories.js";
 import expenseRoutes from "./routes/expenses.js";
+import addIncomes from "./routes/incomes.js";
 
 const app = express();
 app.use(cors());
@@ -14,6 +15,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use("/", authRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/expenses", expenseRoutes);
+app.use("/api/incomes", addIncomes);
 
 const PORT = 5000;
 app.listen(PORT, () => {
