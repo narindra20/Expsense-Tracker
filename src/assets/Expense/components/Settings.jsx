@@ -165,21 +165,6 @@ export default function Settings() {
           </button>
         </form>
       </div>
-      
-      {/* Section Actions de compte */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-        <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-white">Actions de compte</h2>
-        
-        <div className="space-y-3">
-          <button className="w-full text-left py-2 px-4 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors">
-            Exporter mes données
-          </button>
-          
-          <button className="w-full text-left py-2 px-4 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors">
-            Supprimer mon compte
-          </button>
-        </div>
-      </div>
     </div>
   );
 }

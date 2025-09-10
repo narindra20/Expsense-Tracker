@@ -11,142 +11,115 @@ import Settings from "./components/Settings";
 function ExpenseTracker() {
   const [activeSection, setActiveSection] = useState("dashboard");
   const [expenses, setExpenses] = useState([]);
-  const [categories, setCategories] = useState([]); // 🔑 centralisé
-  const [isDarkMode, setIsDarkMode] = useState(
-    () => localStorage.getItem("darkMode") === "true"
-  );
+  const [categories, setCategories] = useState([]);
+  const [isDarkMode, setIsDarkMode] = useState(localStorage.getItem("darkMode") === "true");
   const [incomes, setIncomes] = useState([]);
+  const userId = 1;
+  const API_URL = "http://localhost:5000/api";
 
-  const userId = 1; // ⚠️ À remplacer par le userId réel (token)
-  const API_URL = "http://localhost:5000/api/categories";
-
-  // Charger les catégories du backend
+  // Charger les dépenses
   useEffect(() => {
+    const fetchExpenses = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await fetch(`${API_URL}/expenses?userId=${userId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json();
+        setExpenses(data);
+      } catch (error) {
+        console.error("Erreur lors du chargement des dépenses:", error);
+      }
+    };
+    fetchExpenses();
+  }, []);
+
+  // Charger les catégories
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await fetch(`${API_URL}/categories?userId=${userId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json();
+        setCategories(data);
+      } catch (error) {
+        console.error("Erreur lors du chargement des catégories:", error);
+      }
+    };
     fetchCategories();
   }, []);
 
-  const fetchCategories = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      const res = await fetch(`${API_URL}?userId=${userId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) throw new Error("Erreur chargement catégories");
-      const data = await res.json();
-      setCategories(data);
-    } catch (err) {
-      console.error("Erreur fetch categories:", err);
-    }
-  };
-
-  // Ajouter une dépense
   const handleAddExpense = (expenseData) => {
-    setExpenses([
-      ...expenses,
-      { ...expenseData, amount: parseFloat(expenseData.amount) },
-    ]);
+    setExpenses(prev => [...prev, expenseData]);
   };
 
-  // Supprimer une dépense
-  const handleDeleteExpense = (id) =>
-    setExpenses(expenses.filter((e) => e.id !== id));
+  const handleDeleteExpense = (id) => {
+    setExpenses(prev => prev.filter(e => e.id !== id));
+  };
 
-  // Ajouter un revenu
+  const handleUpdateExpense = (updatedExpense) => {
+    setExpenses(prev => prev.map(e => 
+      e.id === updatedExpense.id ? updatedExpense : e
+    ));
+  };
+
   const handleAddIncome = (incomeData) => {
-    setIncomes([...incomes, { id: incomes.length + 1, ...incomeData }]);
+    setIncomes(prev => [...prev, { id: incomes.length + 1, ...incomeData }]);
   };
-
-  // Dark mode
-  useEffect(() => {
-    if (isDarkMode) document.documentElement.classList.add("dark");
-    else document.documentElement.classList.remove("dark");
-    localStorage.setItem("darkMode", isDarkMode);
-  }, [isDarkMode]);
 
   const toggleDarkMode = () => setIsDarkMode(!isDarkMode);
 
-  // Calcul total des dépenses
-  const totalExpenses = expenses.reduce((total, e) => total + e.amount, 0);
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+    localStorage.setItem("darkMode", isDarkMode);
+  }, [isDarkMode]);
 
-  // Section active
+  const totalExpenses = expenses.reduce((t, e) => t + e.amount, 0);
+
   const renderActiveSection = () => {
-    switch (activeSection) {
-      case "dashboard":
+    switch(activeSection) {
+      case "dashboard": 
+        return <Dashboard expenses={expenses} totalExpenses={totalExpenses} isDarkMode={isDarkMode} />;
+      case "expenses": 
         return (
-          <Dashboard
-            expenses={expenses}
-            totalExpenses={totalExpenses}
-            isDarkMode={isDarkMode}
-          />
-        );
-      case "expenses":
-        return (
-          <ExpensesList
-            expenses={expenses}
-            onDelete={handleDeleteExpense}
-            isDarkMode={isDarkMode}
-          />
-        );
-      case "add":
-        return (
-          <AddExpense
+          <ExpensesList 
+            expenses={expenses} 
+            onDelete={handleDeleteExpense} 
+            onUpdate={handleUpdateExpense}
             categories={categories}
-            onAdd={handleAddExpense}
-            isDarkMode={isDarkMode}
+            isDarkMode={isDarkMode} 
           />
         );
-      case "categories":
-        return (
-          <Categories
-            categories={categories}
-            setCategories={setCategories}
-            refreshCategories={fetchCategories} // 🔑
-            isDarkMode={isDarkMode}
-          />
-        );
-      case "addIncome":
+      case "add": 
+        return <AddExpense categories={categories} onAdd={handleAddExpense} isDarkMode={isDarkMode} userId={userId} />;
+      case "categories": 
+        return <Categories categories={categories} setCategories={setCategories} isDarkMode={isDarkMode} />;
+      case "addIncome": 
         return <AddIncome onAdd={handleAddIncome} isDarkMode={isDarkMode} />;
-      case "reports":
+      case "reports": 
         return <Reports expenses={expenses} isDarkMode={isDarkMode} />;
-      case "settings":
+      case "settings": 
         return <Settings isDarkMode={isDarkMode} />;
-      default:
-        return (
-          <Dashboard
-            expenses={expenses}
-            totalExpenses={totalExpenses}
-            isDarkMode={isDarkMode}
-          />
-        );
+      default: 
+        return <Dashboard expenses={expenses} totalExpenses={totalExpenses} isDarkMode={isDarkMode} />;
     }
   };
 
   return (
-    <div
-      className={`flex h-screen ${
-        isDarkMode ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-900"
-      }`}
-    >
-      <Sidebar
-        activeSection={activeSection}
-        setActiveSection={setActiveSection}
-        isDarkMode={isDarkMode}
-        toggleDarkMode={toggleDarkMode}
-      />
+    <div className={`flex h-screen ${isDarkMode ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-900"}`}>
+      <Sidebar activeSection={activeSection} setActiveSection={setActiveSection} isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} />
       <div className="flex-1 p-8 overflow-y-auto">
         <header className="mb-8">
-          <h1
-            className={`text-3xl font-bold ${
-              isDarkMode ? "text-white" : "text-gray-800"
-            }`}
-          >
+          <h1 className={`text-3xl font-bold ${isDarkMode ? "text-white" : "text-gray-800"}`}>
             Suivi de Dépenses Personnelles
           </h1>
-          <p
-            className={`text-gray-600 ${
-              isDarkMode ? "dark:text-gray-300" : ""
-            }`}
-          >
+          <p className={`text-gray-600 ${isDarkMode ? "dark:text-gray-300" : ""}`}>
             Gérez vos finances facilement
           </p>
         </header>
