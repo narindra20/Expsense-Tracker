@@ -20,7 +20,9 @@ function Sidebar({ activeSection, setActiveSection, isDarkMode, toggleDarkMode }
     { id: "add", label: "Ajouter une Dépense", icon: <PlusCircle /> },
     { id: "categories", label: "Catégories", icon: <Tag /> },
     { id: "reports", label: "Rapports", icon: <BarChart /> },
+    { id: "addIncome", label: "Ajouter un Revenu", icon: <PlusCircle /> },
     { id: "settings", label: "Paramètres", icon: <Lock/> },
+
   ];
 
   const handleLogout = () => {
