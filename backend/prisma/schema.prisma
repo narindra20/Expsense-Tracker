@@ -17,6 +17,7 @@ model User {
   // Relations
   categories Category[]
   expenses   Expense[]
+  incomes    Income[]
 }
 
 model Category {
@@ -43,4 +44,16 @@ model Expense {
   userId      Int
   user        User       @relation(fields: [userId], references: [id])
   createdAt   DateTime   @default(now())
+}
+
+
+model Income {
+  id          Int      @id @default(autoincrement())
+  title       String
+  amount      Float
+  date        DateTime
+  description String?
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id])
+  createdAt   DateTime @default(now())
 }
