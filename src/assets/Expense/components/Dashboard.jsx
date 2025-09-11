@@ -1,6 +1,7 @@
+/* eslint-disable no-unused-vars */
 import React, { useMemo } from "react";
 
-function Dashboard({ expenses = [], incomes = [], categories = [], currentMonth = new Date() }) {
+function Dashboard({ expenses = [], incomes = [], categories = [], currentMonth = new Date(), totalExpenses = 0, isDarkMode = false }) {
   // Sécuriser les props
   const safeExpenses = Array.isArray(expenses) ? expenses : [];
   const safeIncomes = Array.isArray(incomes) ? incomes : [];
@@ -10,20 +11,12 @@ function Dashboard({ expenses = [], incomes = [], categories = [], currentMonth 
   const currentMonthStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
   const currentMonthEnd = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
 
-  const isRecurrentExpenseActiveThisMonth = (expense) => {
-    if (!expense.startDate) return false;
-    const startDate = new Date(expense.startDate);
-    const endDate = expense.endDate ? new Date(expense.endDate) : null;
-    return startDate <= currentMonthEnd && (!endDate || endDate >= currentMonthStart);
-  };
-
-  // Filtrer les dépenses du mois
-  const currentMonthExpenses = useMemo(() => {
+  // Filtrer les dépenses ponctuelles du mois (seulement pour l'affichage visuel)
+  const currentMonthPonctualExpenses = useMemo(() => {
     return safeExpenses.filter(expense => {
       if (!expense) return false;
-      const isRecurrent = expense.type?.toLowerCase() === "recurrente";
-      if (isRecurrent) return isRecurrentExpenseActiveThisMonth(expense);
       if (!expense.date) return false;
+      
       const expenseDate = new Date(expense.date);
       return (
         expenseDate.getMonth() === currentDate.getMonth() &&
@@ -32,20 +25,20 @@ function Dashboard({ expenses = [], incomes = [], categories = [], currentMonth 
     });
   }, [safeExpenses, currentDate]);
 
-  // Calculs
+  // Calcul des revenus du mois
   const totalIncome = useMemo(() => {
     return safeIncomes
       .filter(income => income?.date && new Date(income.date).getMonth() === currentDate.getMonth() && new Date(income.date).getFullYear() === currentDate.getFullYear())
       .reduce((total, income) => total + (parseFloat(income.amount) || 0), 0);
   }, [safeIncomes, currentDate]);
 
-  const totalExpenses = currentMonthExpenses.reduce((total, expense) => total + (parseFloat(expense.amount) || 0), 0);
+  // Utiliser le totalExpenses passé en prop (qui inclut TOUTES les dépenses)
   const balance = totalIncome - totalExpenses;
   const isBudgetExceeded = totalExpenses > totalIncome;
   const exceededAmount = isBudgetExceeded ? totalExpenses - totalIncome : 0;
 
-  // Répartition par catégorie
-  const expensesByCategory = currentMonthExpenses.reduce((acc, expense) => {
+  // Répartition par catégorie (seulement pour les dépenses ponctuelles du mois)
+  const expensesByCategory = currentMonthPonctualExpenses.reduce((acc, expense) => {
     if (!expense.category) return acc;
     const categoryName = typeof expense.category === "object" ? expense.category.name : expense.category;
     acc[categoryName] = (acc[categoryName] || 0) + (parseFloat(expense.amount) || 0);
@@ -63,11 +56,13 @@ function Dashboard({ expenses = [], incomes = [], categories = [], currentMonth 
     "#8b5cf6", "#06b6d4", "#f97316", "#84cc16", "#6366f1",
   ];
 
-  const sortedExpenses = [...safeExpenses].sort((a, b) => {
-    const dateA = a.date ? new Date(a.date) : new Date(0);
-    const dateB = b.date ? new Date(b.date) : new Date(0);
-    return dateB - dateA;
-  });
+  // Trier les dépenses ponctuelles pour l'affichage des dernières dépenses
+  const sortedPonctualExpenses = [...safeExpenses]
+    .sort((a, b) => {
+      const dateA = a.date ? new Date(a.date) : new Date(0);
+      const dateB = b.date ? new Date(b.date) : new Date(0);
+      return dateB - dateA;
+    });
 
   return (
     <div className="p-6">
@@ -77,7 +72,7 @@ function Dashboard({ expenses = [], incomes = [], categories = [], currentMonth 
       </h2>
 
       {isBudgetExceeded && (
-        <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6">
+        <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6 dark:bg-red-900 dark:text-red-200">
           <p className="font-bold">Attention</p>
           <p>Vous avez dépassé votre budget de {exceededAmount.toFixed(2)} €</p>
         </div>
@@ -91,6 +86,9 @@ function Dashboard({ expenses = [], incomes = [], categories = [], currentMonth 
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
           <h3 className="text-lg font-medium text-gray-700 dark:text-gray-300">Dépenses</h3>
           <p className="text-3xl font-bold text-red-600">{totalExpenses.toFixed(2)} €</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            (ponctuelles + récurrentes)
+          </p>
         </div>
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
           <h3 className="text-lg font-medium text-gray-700 dark:text-gray-300">Solde</h3>
@@ -100,10 +98,10 @@ function Dashboard({ expenses = [], incomes = [], categories = [], currentMonth 
         </div>
       </div>
 
-      {/* Graphique dépenses */}
+      {/* Graphique dépenses (seulement ponctuelles) */}
       <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow mb-8">
         <h3 className="text-xl font-semibold mb-4 text-gray-800 dark:text-white">
-          Répartition des Dépenses
+          Répartition des Dépenses Ponctuelles
         </h3>
         {chartData.length > 0 ? (
           <div className="flex flex-col md:flex-row items-center">
@@ -140,7 +138,7 @@ function Dashboard({ expenses = [], incomes = [], categories = [], currentMonth 
                   Total
                 </text>
                 <text x="50" y="50" textAnchor="middle" dy="1.5em" fontSize="6">
-                  {totalExpenses.toFixed(2)} €
+                  {currentMonthPonctualExpenses.reduce((total, e) => total + (parseFloat(e.amount) || 0), 0).toFixed(2)} €
                 </text>
               </svg>
             </div>
@@ -152,42 +150,41 @@ function Dashboard({ expenses = [], incomes = [], categories = [], currentMonth 
                       className="w-4 h-4 rounded mr-2"
                       style={{ backgroundColor: categoryColors[index % categoryColors.length] }}
                     />
-                    <span className="text-sm">{item.category}</span>
+                    <span className="text-sm dark:text-white">{item.category}</span>
                   </div>
                   <div className="text-right">
-                    <div className="text-sm font-medium">{item.amount.toFixed(2)} €</div>
-                    <div className="text-xs text-gray-500">{item.percentage.toFixed(1)}%</div>
+                    <div className="text-sm font-medium dark:text-white">{item.amount.toFixed(2)} €</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400">{item.percentage.toFixed(1)}%</div>
                   </div>
                 </div>
               ))}
             </div>
           </div>
         ) : (
-          <p className="text-gray-500">Aucune dépense ce mois-ci</p>
+          <p className="text-gray-500 dark:text-gray-400">Aucune dépense ponctuelle ce mois-ci</p>
         )}
       </div>
 
-      {/* Dernières dépenses */}
+      {/* Dernières dépenses ponctuelles */}
       <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
-        <h3 className="text-xl font-semibold mb-4">Dernières Dépenses</h3>
-        {sortedExpenses.length > 0 ? (
-          sortedExpenses.slice(0, 5).map((expense, index) => (
-            <div key={expense.id || index} className="flex justify-between py-3 border-b">
+        <h3 className="text-xl font-semibold mb-4 dark:text-white">Dernières Dépenses Ponctuelles</h3>
+        {sortedPonctualExpenses.length > 0 ? (
+          sortedPonctualExpenses.slice(0, 5).map((expense, index) => (
+            <div key={expense.id || index} className="flex justify-between py-3 border-b dark:border-gray-700">
               <div>
-                <p className="font-medium">{expense.description || "Sans description"}</p>
-                <p className="text-sm text-gray-500">
+                <p className="font-medium dark:text-white">{expense.title || "Sans titre"}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
                   {(typeof expense.category === "object" ? expense.category.name : expense.category) || "Non catégorisé"} •{" "}
                   {expense.date ? new Date(expense.date).toLocaleDateString("fr-FR") : "Date inconnue"}
-                  {expense.type?.toLowerCase() === "recurrente" && " (Récurrente)"}
                 </p>
               </div>
-              <span className="text-red-600 font-medium">
+              <span className="text-red-600 font-medium dark:text-red-400">
                 {(parseFloat(expense.amount) || 0).toFixed(2)} €
               </span>
             </div>
           ))
         ) : (
-          <p className="text-gray-500">Aucune dépense enregistrée</p>
+          <p className="text-gray-500 dark:text-gray-400">Aucune dépense ponctuelle enregistrée</p>
         )}
       </div>
     </div>
