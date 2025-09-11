@@ -90,25 +90,19 @@ router.patch("/change-password", authenticateToken, async (req, res) => {
   }
 });
 
-// GET /api/login/me
+// ======================= INFO UTILISATEUR CONNECTÉ =======================
 router.get("/me", authenticateToken, async (req, res) => {
   try {
     const user = await prisma.user.findUnique({
-      where: { id: req.user.userId },
-      select: {
-        id: true,
-        email: true,
-        createdAt: true,
-      },
+      where: { id: Number(req.user.userId) },
+      select: { email: true, createdAt: true },
     });
 
-    if (!user) {
-      return res.status(404).json({ message: "Utilisateur non trouvé" });
-    }
+    if (!user) return res.status(404).json({ message: "Utilisateur non trouvé" });
 
     res.json(user);
   } catch (err) {
-    console.error("Erreur récupération user:", err);
+    console.error(err);
     res.status(500).json({ message: "Erreur serveur" });
   }
 });
