@@ -4,7 +4,6 @@ function ExpensesList({ expenses, onDelete, onUpdate, categories, isDarkMode }) 
   const [editId, setEditId] = useState(null);
   const [editData, setEditData] = useState({});
 
-  // Classes CSS dark/light
   const containerClass = isDarkMode
     ? "bg-gray-800 text-white rounded-lg shadow overflow-hidden"
     : "bg-white text-gray-900 rounded-lg shadow overflow-hidden";
@@ -32,12 +31,8 @@ function ExpensesList({ expenses, onDelete, onUpdate, categories, isDarkMode }) 
   const handleSave = async (id) => {
     try {
       const token = localStorage.getItem("token");
-      const payload = { 
-        ...editData, 
-        amount: parseFloat(editData.amount),
-        categoryId: parseInt(editData.categoryId)
-      };
-      
+      const payload = { amount: parseFloat(editData.amount) };
+
       const response = await fetch(`http://localhost:5000/api/expenses/${id}`, {
         method: "PUT",
         headers: { 
@@ -46,11 +41,11 @@ function ExpensesList({ expenses, onDelete, onUpdate, categories, isDarkMode }) 
         },
         body: JSON.stringify(payload),
       });
-      
+
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || "Erreur serveur");
-      
-      onUpdate(data); // mise à jour du state global
+
+      onUpdate(data);
       setEditId(null);
       setEditData({});
     } catch (err) {
@@ -65,10 +60,10 @@ function ExpensesList({ expenses, onDelete, onUpdate, categories, isDarkMode }) 
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
-      
+
       if (!response.ok) throw new Error("Erreur lors de la suppression");
-      
-      onDelete(id); // mise à jour du state global
+
+      onDelete(id);
     } catch (err) {
       alert("Erreur lors de la suppression : " + err.message);
     }
@@ -99,46 +94,13 @@ function ExpensesList({ expenses, onDelete, onUpdate, categories, isDarkMode }) 
                 <tr key={expense.id}>
                   {editId === expense.id ? (
                     <>
+                      <td className="px-6 py-4">{expense.title}</td>
+                      <td className="px-6 py-4">{expense.category}</td>
+                      <td className="px-6 py-4">{expense.date?.split("T")[0]}</td>
                       <td className="px-6 py-4">
-                        <input 
-                          type="text" 
-                          name="title" 
-                          value={editData.title || ""} 
-                          onChange={handleChange} 
-                          className="border px-2 py-1 rounded w-full text-black" 
-                        />
-                      </td>
-                      <td className="px-6 py-4">
-                        <select 
-                          name="categoryId" 
-                          value={editData.categoryId || ""} 
-                          onChange={handleChange} 
-                          className="border px-2 py-1 rounded w-full text-black"
-                        >
-                          {categories.map(cat => (
-                            <option key={cat.id} value={cat.id}>{cat.name}</option>
-                          ))}
-                        </select>
-                      </td>
-                      <td className="px-6 py-4">
-                        <input 
-                          type="date" 
-                          name="date" 
-                          value={editData.date?.split("T")[0] || ""} 
-                          onChange={handleChange} 
-                          className="border px-2 py-1 rounded w-full text-black" 
-                        />
-                      </td>
-                      <td className="px-6 py-4">
-                        <select 
-                          name="type" 
-                          value={editData.type || ""} 
-                          onChange={handleChange} 
-                          className="border px-2 py-1 rounded w-full text-black"
-                        >
-                          <option value="Ponctuelle">Ponctuelle</option>
-                          <option value="Récurrente">Récurrente</option>
-                        </select>
+                        <span className={expense.type === "Ponctuelle" ? textTypePonctuelle : textTypeRecurrente}>
+                          {expense.type}
+                        </span>
                       </td>
                       <td className="px-6 py-4">
                         <input 
@@ -169,10 +131,7 @@ function ExpensesList({ expenses, onDelete, onUpdate, categories, isDarkMode }) 
                         <button 
                           onClick={() => { 
                             setEditId(expense.id); 
-                            setEditData({ 
-                              ...expense, 
-                              categoryId: expense.categoryId 
-                            }); 
+                            setEditData({ amount: expense.amount }); 
                           }} 
                           className="text-blue-600 hover:text-blue-900"
                         >
