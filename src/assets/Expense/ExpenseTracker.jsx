@@ -17,7 +17,6 @@ function ExpenseTracker() {
   const userId = 1;
   const API_URL = "http://localhost:5000/api";
 
-  // Charger les dépenses
   useEffect(() => {
     const token = localStorage.getItem("token");
 
