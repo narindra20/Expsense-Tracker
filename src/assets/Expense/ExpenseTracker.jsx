@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import React, { useState, useEffect } from "react";
 import Sidebar from "./components/Sidebar";
 import Dashboard from "./components/Dashboard";
@@ -12,30 +13,11 @@ function ExpenseTracker() {
   const [activeSection, setActiveSection] = useState("dashboard");
   const [expenses, setExpenses] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [isDarkMode, setIsDarkMode] = useState(localStorage.getItem("darkMode") === "true");
   const [incomes, setIncomes] = useState([]);
+  const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem("darkMode") === "true");
+  
   const userId = 1;
   const API_URL = "http://localhost:5000/api";
-
-
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-
-  // 🌙 Thème : récupérer depuis localStorage dès le premier rendu
-  const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem("darkMode") === "true");
-
-
-  useEffect(() => {
-    if (isDarkMode) document.documentElement.classList.add("dark");
-    else document.documentElement.classList.remove("dark");
-  }, [isDarkMode]);
-
-  const toggleDarkMode = () => {
-    setIsDarkMode(prev => {
-      localStorage.setItem("darkMode", !prev);
-      return !prev;
-    });
-  };
 
   // Charger catégories depuis l'API
   const fetchCategories = async () => {
@@ -65,39 +47,87 @@ function ExpenseTracker() {
     }
   };
 
+  // Charger revenus depuis l'API
+  const fetchIncomes = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_URL}/incomes`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      setIncomes(data);
+    } catch (error) {
+      console.error("Erreur lors du chargement des revenus:", error);
+    }
+  };
+
+  useEffect(() => {
     fetchIncomes();
     fetchExpenses();
     fetchCategories();
-    fetchExpenses();
   }, []);
 
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+    localStorage.setItem("darkMode", isDarkMode);
+  }, [isDarkMode]);
+
   const handleAddExpense = (expenseData) => {
-    // Ajouter localement
     setExpenses(prev => [...prev, expenseData]);
-    // Recharger toutes les dépenses pour être sûr qu'elles sont bien persistées
     fetchExpenses();
   };
 
   const handleDeleteExpense = (id) => setExpenses(prev => prev.filter(e => e.id !== id));
+  
   const handleUpdateExpense = (updatedExpense) =>
     setExpenses(prev => prev.map(e => e.id === updatedExpense.id ? updatedExpense : e));
 
-  const handleAddIncome = (incomeData) => setIncomes(prev => [...prev, { id: incomes.length + 1, ...incomeData }]);
+  const handleAddIncome = (newIncome) => {
+    setIncomes(prev => [newIncome, ...prev]);
+  };
 
-  const renderSection = () => {
+  const handleDeleteIncome = (id) => {
+    setIncomes(prev => prev.filter(income => income.id !== id));
+  };
+
+  const handleUpdateIncome = (updatedIncome) => {
+    setIncomes(prev =>
+      prev.map(income => income.id === updatedIncome.id ? updatedIncome : income)
+    );
+  };
+
+  const toggleDarkMode = () => setIsDarkMode(prev => !prev);
+
+  // Filtrer les dépenses pour l'affichage
+  const ponctualExpenses = expenses.filter(e => e.type?.toLowerCase() === "ponctuelle");
+  const recurrentExpenses = expenses.filter(e => e.type?.toLowerCase() === "recurrente");
+
+  const totalExpenses = expenses.reduce((t, e) => t + (e.amount || 0), 0);
+  const totalPonctualExpenses = ponctualExpenses.reduce((t, e) => t + (e.amount || 0), 0);
+
+  const renderActiveSection = () => {
     switch(activeSection) {
-      case "dashboard":
-        return <Dashboard expenses={expenses} incomes={incomes} categories={categories} isDarkMode={isDarkMode} />;
-      case "expenses":
-        return categories.length > 0 ? (
+      case "dashboard": 
+        return <Dashboard 
+                  expenses={ponctualExpenses}
+                  incomes={incomes}
+                  totalExpenses={totalExpenses}
+                  isDarkMode={isDarkMode} 
+               />;
+      case "expenses": 
+        return (
           <ExpensesList 
-            expenses={expenses} 
+            expenses={expenses}
             onDelete={handleDeleteExpense} 
             onUpdate={handleUpdateExpense} 
             categories={categories} 
             isDarkMode={isDarkMode} 
           />
-        ) : null;
+        );
       case "add":
         return categories.length > 0 ? (
           <AddExpense categories={categories} onAdd={handleAddExpense} isDarkMode={isDarkMode} />
@@ -107,20 +137,23 @@ function ExpenseTracker() {
       case "incomes": 
         return (
           <IncomesList 
-            incomes={incomes}  // <-- correction ici
-            onDelete={handleDeleteIncome}  // <-- correction ici
-            onUpdate={handleUpdateIncome}  // <-- correction ici
+            incomes={incomes}
+            onDelete={handleDeleteIncome}
+            onUpdate={handleUpdateIncome}
             isDarkMode={isDarkMode} 
           />
         );
       case "addIncome": 
         return <AddIncome onAdd={handleAddIncome} isDarkMode={isDarkMode} />;
-      case "reports": 
-        return <Reports expenses={expenses} isDarkMode={isDarkMode} />;
       case "settings":
         return <Settings isDarkMode={isDarkMode} />;
-      default:
-        return <Dashboard expenses={expenses} incomes={incomes} categories={categories} isDarkMode={isDarkMode} />;
+      default: 
+        return <Dashboard 
+                  expenses={ponctualExpenses}
+                  incomes={incomes}
+                  totalExpenses={totalPonctualExpenses}
+                  isDarkMode={isDarkMode} 
+               />;
     }
   };
 
@@ -136,7 +169,7 @@ function ExpenseTracker() {
             Gérez vos finances facilement
           </p>
         </header>
-        {renderSection()}
+        {renderActiveSection()}
       </div>
     </div>
   );

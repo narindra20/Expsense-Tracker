@@ -42,4 +42,54 @@ router.post("/", authenticateToken, async (req, res) => {
   }
 });
 
+
+// PUT modifier un revenu
+router.put("/:id", authenticateToken, async (req, res) => {
+  const { id } = req.params;
+  const { title, amount, type, description, date, } = req.body;
+
+  try {
+    const income = await prisma.income.findUnique({ where: { id: Number(id) } });
+    if (!income || income.userId !== Number(req.user.userId)) {
+      return res.status(403).json({ message: "Accès refusé" });
+    }
+
+    const updatedIncome = await prisma.income.update({
+      where: { id: Number(id) },
+      data: {
+        title: title ?? income.title,
+        amount: amount !== undefined ? Number(amount) : income.amount,
+        type: type ?? income.type,
+        description: description ?? income.description,
+        date: date ? new Date(date) : income.date,
+      },
+    });
+
+    res.json(updatedIncome);
+  } catch (err) {
+    console.error("Erreur modification revenu:", err);
+    res.status(500).json({ message: "Erreur serveur" });
+  }
+});
+
+
+// DELETE supprimer un revenu
+router.delete("/:id", authenticateToken, async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const income = await prisma.income.findUnique({ where: { id: Number(id) } });
+    if (!income || income.userId !== Number(req.user.userId)) {
+      return res.status(403).json({ message: "Accès refusé" });
+    }
+
+    await prisma.income.delete({ where: { id: Number(id) } });
+    res.status(204).send();
+  } catch (err) {
+    console.error("Erreur suppression revenu:", err);
+    res.status(500).json({ message: "Erreur serveur" });
+  }
+});
+
+
 export default router;
