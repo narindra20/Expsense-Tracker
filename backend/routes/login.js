@@ -8,7 +8,7 @@ import dotenv from "dotenv";
 dotenv.config();
 const router = express.Router();
 const prisma = new PrismaClient();
-const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_SECRET = process.env.JWT_SECRET || "Fitiavana";
 
 // ===== SIGNUP =====
 router.post("/signup", async (req, res) => {
@@ -23,7 +23,7 @@ router.post("/signup", async (req, res) => {
     });
     res.json({ success: true, userId: user.id });
   } catch (err) {
-    if (err.code === "P2002")
+    if (err.code === "P2002") // Conflit Prisma : email unique
       res.json({ success: false, message: "Email déjà utilisé" });
     else {
       console.error(err);
@@ -56,46 +56,32 @@ router.post("/login", async (req, res) => {
   }
 });
 
-// ===== DASHBOARD =====
+// ===== DASHBOARD (protégé) =====
 router.get("/dashboard", authenticateToken, (req, res) => {
   res.json({ message: `Bienvenue utilisateur ${req.user.userId}` });
 });
 
-// ===== CHANGE PASSWORD ======
+// ===== CHANGE PASSWORD =====
 router.patch("/change-password", authenticateToken, async (req, res) => {
   const { oldPassword, newPassword } = req.body;
 
   if (!oldPassword || !newPassword) {
-    console.log("Champs manquants :", req.body);
     return res.status(400).json({ success: false, message: "Champs manquants" });
   }
 
   try {
-    // Vérifier que l'utilisateur existe
     const user = await prisma.user.findUnique({ where: { id: req.user.userId } });
-    if (!user) {
-      console.log("Utilisateur non trouvé pour l'ID :", req.user.userId);
-      return res.status(404).json({ success: false, message: "Utilisateur non trouvé" });
-    }
-    console.log("Utilisateur trouvé :", user.email);
+    if (!user) return res.status(404).json({ success: false, message: "Utilisateur non trouvé" });
 
-    // Comparer l'ancien mot de passe
     const match = await bcrypt.compare(oldPassword, user.password);
-    if (!match) {
-      console.log("Mot de passe actuel incorrect pour l'utilisateur :", user.email);
+    if (!match)
       return res.status(401).json({ success: false, message: "Mot de passe actuel incorrect" });
-    }
 
-    // Hasher le nouveau mot de passe
     const hashedPassword = await bcrypt.hash(newPassword, 10);
-    console.log("Nouveau hash :", hashedPassword);
-
-    // Mettre à jour le mot de passe dans la base
-    const updatedUser = await prisma.user.update({
+    await prisma.user.update({
       where: { id: user.id },
       data: { password: hashedPassword },
     });
-    console.log("Mot de passe mis à jour pour l'utilisateur :", updatedUser.email);
 
     res.json({ success: true, message: "Mot de passe changé avec succès" });
   } catch (err) {
