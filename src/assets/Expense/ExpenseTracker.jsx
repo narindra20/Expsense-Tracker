@@ -12,42 +12,34 @@ function ExpenseTracker() {
   const [activeSection, setActiveSection] = useState("dashboard");
   const [expenses, setExpenses] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [isDarkMode, setIsDarkMode] = useState(localStorage.getItem("darkMode") === "true");
   const [incomes, setIncomes] = useState([]);
+  const userId = 1;
   const API_URL = "http://localhost:5000/api";
 
-  // 🌙 Thème : récupérer depuis localStorage dès le premier rendu
-  const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem("darkMode") === "true");
-
+  // Charger les dépenses
   useEffect(() => {
     const token = localStorage.getItem("token");
 
     const fetchIncomes = async () => {
-      try {
-        const res = await fetch(`${API_URL}/incomes`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const data = await res.json();
-        if (data.success) setIncomes(data.incomes);
-      } catch (error) {
-        console.error("Erreur lors du chargement des revenus:", error);
-      }
+      const res = await fetch(`${API_URL}/incomes`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (data.success) setIncomes(data.incomes);
     };
 
     const fetchExpenses = async () => {
-      try {
-        const res = await fetch(`${API_URL}/expenses`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const data = await res.json();
-        if (data.success) setExpenses(data.expenses);
-      } catch (error) {
-        console.error("Erreur lors du chargement des dépenses:", error);
-      }
+      const res = await fetch(`${API_URL}/expenses`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (data.success) setExpenses(data.expenses);
     };
 
     const fetchCategories = async () => {
       try {
-        const res = await fetch(`${API_URL}/categories`, {
+        const res = await fetch(`${API_URL}/categories?userId=${userId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = await res.json();
@@ -66,92 +58,102 @@ function ExpenseTracker() {
     setExpenses(prev => [...prev, expenseData]);
   };
 
-  const handleDeleteExpense = (id) => setExpenses(prev => prev.filter(e => e.id !== id));
+  const handleDeleteExpense = (id) => {
+    setExpenses(prev => prev.filter(e => e.id !== id));
+  };
 
-  const handleUpdateExpense = (updatedExpense) =>
-    setExpenses(prev => prev.map(e => e.id === updatedExpense.id ? updatedExpense : e));
+  const handleUpdateExpense = (updatedExpense) => {
+    setExpenses(prev => prev.map(e => 
+      e.id === updatedExpense.id ? updatedExpense : e
+    ));
+  };
 
-  const handleAddIncome = (newIncome) => setIncomes(prev => [newIncome, ...prev]);
+  const handleAddIncome = (newIncome) => {
+    setIncomes(prev => [newIncome, ...prev]);
+  };
 
-  const handleDeleteIncome = (id) => setIncomes(prev => prev.filter(income => income.id !== id));
+  const handleDeleteIncome = (id) => {
+    setIncomes(prev => prev.filter(income => income.id !== id));
+  };
 
-  const handleUpdateIncome = (updatedIncome) =>
-    setIncomes(prev => prev.map(income => income.id === updatedIncome.id ? updatedIncome : income));
+  const handleUpdateIncome = (updatedIncome) => {
+    setIncomes(prev =>
+      prev.map(income => income.id === updatedIncome.id ? updatedIncome : income)
+    );
+  };
 
-  const toggleDarkMode = () => setIsDarkMode(prev => !prev);
+  const toggleDarkMode = () => setIsDarkMode(!isDarkMode);
 
   useEffect(() => {
-    if (isDarkMode) document.documentElement.classList.add("dark");
-    else document.documentElement.classList.remove("dark");
+    if (isDarkMode) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
     localStorage.setItem("darkMode", isDarkMode);
   }, [isDarkMode]);
 
   const totalExpenses = expenses.reduce((t, e) => t + e.amount, 0);
 
   const renderActiveSection = () => {
-    switch (activeSection) {
-      case "dashboard":
+    switch(activeSection) {
+      case "dashboard": 
+        return <Dashboard 
+                  expenses={expenses} 
+                  incomes={incomes}  // <-- correction ici
+                  totalExpenses={totalExpenses} 
+                  isDarkMode={isDarkMode} 
+               />;
+      case "expenses": 
         return (
-          <Dashboard
-            expenses={expenses}
-            incomes={incomes}
-            totalExpenses={totalExpenses}
-            isDarkMode={isDarkMode}
-          />
-        );
-      case "expenses":
-        return categories.length > 0 ? (
-          <ExpensesList
-            expenses={expenses}
-            onDelete={handleDeleteExpense}
+          <ExpensesList 
+            expenses={expenses} 
+            onDelete={handleDeleteExpense} 
             onUpdate={handleUpdateExpense}
             categories={categories}
-            isDarkMode={isDarkMode}
+            isDarkMode={isDarkMode} 
           />
-        ) : null;
-      case "add":
-        return categories.length > 0 ? (
-          <AddExpense categories={categories} onAdd={handleAddExpense} isDarkMode={isDarkMode} />
-        ) : null;
-      case "categories":
+        );
+      case "add": 
+        return <AddExpense categories={categories} onAdd={handleAddExpense} isDarkMode={isDarkMode} userId={userId} />;
+      case "categories": 
         return <Categories categories={categories} setCategories={setCategories} isDarkMode={isDarkMode} />;
-      case "incomes":
+      case "incomes": 
         return (
-          <IncomesList
-            incomes={incomes}
-            onDelete={handleDeleteIncome}
-            onUpdate={handleUpdateIncome}
-            isDarkMode={isDarkMode}
+          <IncomesList 
+            incomes={incomes}  // <-- correction ici
+            onDelete={handleDeleteIncome}  // <-- correction ici
+            onUpdate={handleUpdateIncome}  // <-- correction ici
+            isDarkMode={isDarkMode} 
           />
         );
-      case "addIncome":
+      case "addIncome": 
         return <AddIncome onAdd={handleAddIncome} isDarkMode={isDarkMode} />;
-      case "settings":
+      case "reports": 
+        return <Reports expenses={expenses} isDarkMode={isDarkMode} />;
+      case "settings": 
         return <Settings isDarkMode={isDarkMode} />;
-      default:
-        return (
-          <Dashboard
-            expenses={expenses}
-            incomes={incomes}
-            totalExpenses={totalExpenses}
-            isDarkMode={isDarkMode}
-          />
-        );
+      default: 
+        return <Dashboard 
+                  expenses={expenses} 
+                  incomes={incomes} 
+                  totalExpenses={totalExpenses} 
+                  isDarkMode={isDarkMode} 
+               />;
     }
   };
 
   return (
     <div className={`flex h-screen ${isDarkMode ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-900"}`}>
-      <Sidebar
-        activeSection={activeSection}
-        setActiveSection={setActiveSection}
-        isDarkMode={isDarkMode}
-        toggleDarkMode={toggleDarkMode}
-      />
+      <Sidebar activeSection={activeSection} setActiveSection={setActiveSection} isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} />
       <div className="flex-1 p-8 overflow-y-auto">
         <header className="mb-8">
-          <h1 className={`text-3xl font-bold ${isDarkMode ? "text-white" : "text-gray-800"}`}>Suivi de Dépenses Personnelles</h1>
-          <p className={`text-gray-600 ${isDarkMode ? "dark:text-gray-300" : ""}`}>Gérez vos finances facilement</p>
+          <h1 className={`text-3xl font-bold ${isDarkMode ? "text-white" : "text-gray-800"}`}>
+            Suivi de Dépenses Personnelles
+          </h1>
+          <p className={`text-gray-600 ${isDarkMode ? "dark:text-gray-300" : ""}`}>
+            Gérez vos finances facilement
+          </p>
         </header>
         {renderActiveSection()}
       </div>
