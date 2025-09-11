@@ -1,61 +1,77 @@
-// /backend/routes/categories.js
 import express from "express";
 import { PrismaClient } from "@prisma/client";
+import { authenticateToken } from "../middleware/middleware.js";
 
 const router = express.Router();
 const prisma = new PrismaClient();
 
-// Récupérer toutes les catégories d'un utilisateur
-router.get("/", async (req, res) => {
+// GET toutes les catégories de l'utilisateur connecté
+router.get("/", authenticateToken, async (req, res) => {
   try {
-    const userId = parseInt(req.query.userId);
-    if (!userId) return res.status(400).json({ error: "userId requis" });
-
-    const categories = await prisma.category.findMany({ where: { userId } });
+    const categories = await prisma.category.findMany({
+      where: { userId: Number(req.user.userId) },
+    });
     res.json(categories);
   } catch (err) {
-    res.status(500).json({ error: "Erreur lors du chargement" });
+    console.error(err);
+    res.status(500).json({ error: "Erreur serveur" });
   }
 });
 
-// Ajouter une catégorie
-router.post("/", async (req, res) => {
-  const { name, description, userId } = req.body;
-  if (!name || !userId) return res.status(400).json({ error: "Nom et userId requis" });
+// POST nouvelle catégorie
+router.post("/", authenticateToken, async (req, res) => {
+  const { name, description } = req.body;
+  if (!name) return res.status(400).json({ error: "Nom requis" });
 
   try {
-    const category = await prisma.category.create({ data: { name, description, userId } });
+    const category = await prisma.category.create({
+      data: {
+        name,
+        description: description || "",
+        userId: Number(req.user.userId),
+      },
+    });
     res.status(201).json(category);
-  } catch {
-    res.status(500).json({ error: "Erreur lors de l'ajout" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Erreur serveur" });
   }
 });
 
-// Modifier une catégorie
-router.put("/:id", async (req, res) => {
+// PUT modifier catégorie
+router.put("/:id", authenticateToken, async (req, res) => {
   const { id } = req.params;
   const { name, description } = req.body;
 
   try {
+    const category = await prisma.category.findUnique({ where: { id: Number(id) } });
+    if (!category || category.userId !== Number(req.user.userId))
+      return res.status(403).json({ error: "Accès refusé" });
+
     const updated = await prisma.category.update({
-      where: { id: parseInt(id) },
+      where: { id: Number(id) },
       data: { name, description },
     });
     res.json(updated);
-  } catch {
-    res.status(500).json({ error: "Erreur lors de la modification" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Erreur serveur" });
   }
 });
 
-// Supprimer une catégorie
-router.delete("/:id", async (req, res) => {
+// DELETE catégorie
+router.delete("/:id", authenticateToken, async (req, res) => {
   const { id } = req.params;
-
   try {
-    await prisma.category.delete({ where: { id: parseInt(id) } });
+    const category = await prisma.category.findUnique({ where: { id: Number(id) } });
+    if (!category || category.userId !== Number(req.user.userId))
+      return res.status(403).json({ error: "Accès refusé" });
+
+    await prisma.category.delete({ where: { id: Number(id) } });
     res.status(204).send();
-  } catch {
-    res.status(500).json({ error: "Erreur lors de la suppression" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Erreur serveur" });
   }
 });
 

@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 
-const JWT_SECRET = "Fitiavana";
+const JWT_SECRET = process.env.JWT_SECRET || "Fitiavana";
 
 export function authenticateToken(req, res, next) {
   const authHeader = req.headers["authorization"];
@@ -9,7 +9,8 @@ export function authenticateToken(req, res, next) {
 
   jwt.verify(token, JWT_SECRET, (err, user) => {
     if (err) return res.status(403).json({ message: "Token invalide" });
-    req.user = user;
+    if (!user.userId) return res.status(403).json({ message: "Token invalide (userId manquant)" });
+    req.user = user; // contient userId
     next();
   });
 }

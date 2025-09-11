@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from "react";
 
-function AddExpense({ categories = [], onAdd, isDarkMode, userId }) {
+function AddExpense({ categories = [], onAdd, isDarkMode }) {
   const initial = {
     title: "",
     amount: "",
-    category: categories.length > 0 ? (categories[0].id || categories[0]) : "",
+    category: categories.length > 0 ? categories[0].id : "",
     date: new Date().toISOString().split("T")[0],
     type: "Ponctuelle",
-    startDate: "",
+    startDate: new Date().toISOString().split("T")[0],
     endDate: "",
     description: ""
   };
@@ -17,8 +17,7 @@ function AddExpense({ categories = [], onAdd, isDarkMode, userId }) {
 
   useEffect(() => {
     if (categories.length > 0) {
-      const defaultCategory = categories[0].id ? categories[0].id : categories[0];
-      setExpense(prev => ({ ...prev, category: defaultCategory }));
+      setExpense(prev => ({ ...prev, category: categories[0].id }));
     }
   }, [categories]);
 
@@ -29,8 +28,15 @@ function AddExpense({ categories = [], onAdd, isDarkMode, userId }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (!expense.title || !expense.amount) {
       setError("Veuillez remplir le titre et le montant.");
+      return;
+    }
+
+    const amount = parseFloat(expense.amount);
+    if (isNaN(amount) || amount <= 0) {
+      setError("Le montant doit être un nombre valide supérieur à 0.");
       return;
     }
 
@@ -40,14 +46,13 @@ function AddExpense({ categories = [], onAdd, isDarkMode, userId }) {
 
       const payload = {
         title: expense.title,
-        amount: parseFloat(expense.amount),
+        amount,
         categoryId: expense.category,
         description: expense.description || "",
         type: expense.type,
         date: expense.type === "Ponctuelle" ? expense.date : null,
         startDate: expense.type === "Récurrente" ? expense.startDate : null,
         endDate: expense.type === "Récurrente" ? expense.endDate : null,
-        userId
       };
 
       const response = await fetch("http://localhost:5000/api/expenses", {
@@ -74,14 +79,13 @@ function AddExpense({ categories = [], onAdd, isDarkMode, userId }) {
     <div className={containerClass}>
       <h2 className="text-3xl font-bold mb-6 text-center text-indigo-700">Ajouter une dépense</h2>
       {error && <div className="mb-4 p-3 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-200 rounded">{error}</div>}
+
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="flex flex-wrap gap-4">
           <input name="title" type="text" placeholder="Titre *" value={expense.title} onChange={handleChange} className={inputClass} required />
           <input name="amount" type="number" step="0.01" placeholder="Montant (€) *" value={expense.amount} onChange={handleChange} className={inputClass + " w-40"} required />
           <select name="category" value={expense.category} onChange={handleChange} className={inputClass + " w-44"} required>
-            {categories.map(cat => (
-              <option key={cat.id} value={cat.id}>{cat.name}</option>
-            ))}
+            {categories.map(cat => (<option key={cat.id} value={cat.id}>{cat.name}</option>))}
           </select>
         </div>
 
@@ -90,11 +94,23 @@ function AddExpense({ categories = [], onAdd, isDarkMode, userId }) {
           <label><input type="radio" name="type" value="Récurrente" checked={expense.type === "Récurrente"} onChange={handleChange} className="form-radio text-indigo-600" /> Récurrente</label>
         </div>
 
-        {expense.type === "Ponctuelle" && <input name="date" type="date" value={expense.date} onChange={handleChange} className={inputClass} required />}
+        {expense.type === "Ponctuelle" && (
+          <div>
+            <label className="block mb-2">Date de la dépense *</label>
+            <input name="date" type="date" value={expense.date} onChange={handleChange} className={inputClass} required />
+          </div>
+        )}
+
         {expense.type === "Récurrente" && (
-          <div className="flex gap-4">
-            <input name="startDate" type="date" value={expense.startDate} onChange={handleChange} className={inputClass} required />
-            <input name="endDate" type="date" value={expense.endDate} onChange={handleChange} className={inputClass} placeholder="Date de fin (optionnelle)" />
+          <div className="space-y-4">
+            <div>
+              <label className="block mb-2">Date de début *</label>
+              <input name="startDate" type="date" value={expense.startDate} onChange={handleChange} className={inputClass} required />
+            </div>
+            <div>
+              <label className="block mb-2">Date de fin (optionnelle)</label>
+              <input name="endDate" type="date" value={expense.endDate} onChange={handleChange} className={inputClass} />
+            </div>
           </div>
         )}
 
