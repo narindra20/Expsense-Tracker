@@ -9,6 +9,7 @@ import summaryRoutes from "./routes/summary.js"; // si tu l’utilises
 
 dotenv.config();
 
+
 const app = express();
 
 // Middleware
@@ -16,12 +17,20 @@ app.use(cors());
 app.use(express.json());
 app.use("/uploads", express.static("uploads")); // pour servir les fichiers reçus
 
+
 // Routes
 app.use("/", authRoutes);
 app.use("/api/expenses", expenseRoutes);
 app.use("/api/incomes", incomeRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/summary", summaryRoutes); // si tu as cette route
+
+// Routes API (toutes sous /api)
+app.use("/api/auth", authRoutes);        // /api/auth/login, /api/auth/signup, etc.
+app.use("/api/categories", categoryRoutes);
+app.use("/api/expenses", expenseRoutes);
+app.use("/api/incomes", incomeRoutes);
+
 
 // Route de santé
 app.get("/api/health", (req, res) => {
