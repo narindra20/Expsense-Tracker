@@ -5,7 +5,7 @@ import authRoutes from "./routes/login.js";
 import expenseRoutes from "./routes/expenses.js";
 import incomeRoutes from "./routes/incomes.js";
 import categoryRoutes from "./routes/categories.js";
-import summaryRoutes from "./routes/summary.js"; // si tu l’utilises
+
 
 dotenv.config();
 
@@ -23,7 +23,7 @@ app.use("/", authRoutes);
 app.use("/api/expenses", expenseRoutes);
 app.use("/api/incomes", incomeRoutes);
 app.use("/api/categories", categoryRoutes);
-app.use("/api/summary", summaryRoutes); // si tu as cette route
+
 
 // Routes API (toutes sous /api)
 app.use("/api/auth", authRoutes);        // /api/auth/login, /api/auth/signup, etc.
