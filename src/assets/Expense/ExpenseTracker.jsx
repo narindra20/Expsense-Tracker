@@ -162,7 +162,7 @@ const renderActiveSection = () => {
             Gérez vos finances facilement
           </p>
         </header>
-        {renderActiveSection()}
+        {renderActiveSection()}  
       </div>
     </div>
   );

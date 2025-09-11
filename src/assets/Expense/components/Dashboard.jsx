@@ -11,7 +11,7 @@ function Dashboard({ expenses = [], incomes = [], categories = [], currentMonth 
   const currentMonthStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
   const currentMonthEnd = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
 
-  // Filtrer les dépenses ponctuelles du mois (seulement pour l'affichage visuel)
+  
   const currentMonthPonctualExpenses = useMemo(() => {
     return safeExpenses.filter(expense => {
       if (!expense) return false;

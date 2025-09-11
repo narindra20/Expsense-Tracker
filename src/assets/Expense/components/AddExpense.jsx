@@ -99,7 +99,7 @@ function AddExpense({ categories = [], onAdd, isDarkMode }) {
             <label className="block mb-2">Date de la dépense *</label>
             <input name="date" type="date" value={expense.date} onChange={handleChange} className={inputClass} required />
           </div>
-        )}
+        )}  
 
         {expense.type === "Récurrente" && (
           <div className="space-y-4">
