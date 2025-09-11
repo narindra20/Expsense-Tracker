@@ -4,6 +4,7 @@ import authRoutes from "./routes/login.js";
 import categoryRoutes from "./routes/categories.js";
 import expenseRoutes from "./routes/expenses.js";
 import incomeRoutes from "./routes/incomes.js";
+import summaryRoutes from "./routes/summary.js"; // <-- importer summary
 
 const app = express();
 
@@ -16,13 +17,14 @@ app.use("/", authRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/expenses", expenseRoutes);
 app.use("/api/incomes", incomeRoutes);
+app.use("/api/summary", summaryRoutes); // <-- brancher summary
 
 // Route de santé
 app.get("/api/health", (req, res) => {
   res.json({ message: "Server is running!" });
 });
 
-// Gestion des routes non trouvées - CORRECTION ICI
+// Gestion des routes non trouvées
 app.use((req, res) => {
   res.status(404).json({ message: "Route not found" });
 });

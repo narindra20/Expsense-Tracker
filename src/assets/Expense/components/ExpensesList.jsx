@@ -1,14 +1,29 @@
 import React, { useState } from "react";
+import { Download } from "lucide-react";
 
 function ExpensesList({ expenses, onDelete, onUpdate, categories, isDarkMode }) {
   const [editId, setEditId] = useState(null);
   const [editData, setEditData] = useState({});
 
-  const containerClass = isDarkMode ? "bg-gray-800 text-white rounded-lg shadow overflow-hidden" : "bg-white text-gray-900 rounded-lg shadow overflow-hidden";
-  const tableHeadClass = isDarkMode ? "bg-gray-700 text-gray-300" : "bg-gray-50 text-gray-500";
-  const rowBgClass = isDarkMode ? "divide-y divide-gray-600" : "divide-y divide-gray-200";
-  const textTypePonctuelle = isDarkMode ? "bg-green-700 text-green-100 px-2 rounded-full text-xs" : "bg-green-100 text-green-800 px-2 rounded-full text-xs";
-  const textTypeRecurrente = isDarkMode ? "bg-blue-700 text-blue-100 px-2 rounded-full text-xs" : "bg-blue-100 text-blue-800 px-2 rounded-full text-xs";
+  const containerClass = isDarkMode
+    ? "bg-gray-800 text-white rounded-lg shadow overflow-hidden"
+    : "bg-white text-gray-900 rounded-lg shadow overflow-hidden";
+
+  const tableHeadClass = isDarkMode
+    ? "bg-gray-700 text-gray-300"
+    : "bg-gray-50 text-gray-500";
+
+  const rowBgClass = isDarkMode
+    ? "divide-y divide-gray-600"
+    : "divide-y divide-gray-200";
+
+  const textTypePonctuelle = isDarkMode
+    ? "bg-green-700 text-green-100 px-2 rounded-full text-xs"
+    : "bg-green-100 text-green-800 px-2 rounded-full text-xs";
+
+  const textTypeRecurrente = isDarkMode
+    ? "bg-blue-700 text-blue-100 px-2 rounded-full text-xs"
+    : "bg-blue-100 text-blue-800 px-2 rounded-full text-xs";
 
   const handleChange = (e) => setEditData({ ...editData, [e.target.name]: e.target.value });
 
@@ -45,12 +60,35 @@ function ExpensesList({ expenses, onDelete, onUpdate, categories, isDarkMode }) 
     }
   };
 
-  // Fonction pour afficher la date correctement
   const getDisplayDate = (expense) => {
-    if (expense.type && expense.type.toLowerCase() === "recurrente") {
-      return expense.startDate ? new Date(expense.startDate).toLocaleDateString('fr-FR') : "Non définie";
+    if (expense.type.toLowerCase() === "récurrente") {
+      if (expense.startDate && expense.endDate)
+        return `${new Date(expense.startDate).toLocaleDateString("fr-FR")} - ${new Date(expense.endDate).toLocaleDateString("fr-FR")}`;
+      if (expense.startDate)
+        return `À partir du ${new Date(expense.startDate).toLocaleDateString("fr-FR")}`;
+      return "Période non définie";
     } else {
-      return expense.date ? new Date(expense.date).toLocaleDateString('fr-FR') : "Non définie";
+      return expense.date ? new Date(expense.date).toLocaleDateString("fr-FR") : "Date non définie";
+    }
+  };
+
+  const downloadReceipt = async (expense) => {
+    if (!expense.receipt) return alert("Aucun reçu pour cette dépense");
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`http://localhost:5000/api/expenses/receipts/${expense.id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("Impossible de télécharger le reçu");
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = expense.receipt;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      alert(err.message);
     }
   };
 
@@ -75,73 +113,42 @@ function ExpensesList({ expenses, onDelete, onUpdate, categories, isDarkMode }) 
               </tr>
             </thead>
             <tbody className={rowBgClass}>
-              {expenses.map((expense) => {
-                const displayDate = getDisplayDate(expense);
-
-                return (
-                  <tr key={expense.id}>
-                    {editId === expense.id ? (
-                      <>
-                        <td className="px-6 py-4">{expense.title}</td>
-                        <td className="px-6 py-4">{expense.category ? expense.category.name : "Inconnue"}</td>
-                        <td className="px-6 py-4">{displayDate}</td>
-                        <td className="px-6 py-4">
-                        <span className={expense.type === "Ponctuelle" ? textTypePonctuelle : textTypeRecurrente}>
-                            {expense.type}
-                        </span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <input 
-                            type="number" 
-                            name="amount" 
-                            value={editData.amount || ""} 
-                            onChange={handleChange} 
-                            className="border px-2 py-1 rounded w-full text-black" 
-                          />
-                        </td>
-                        <td className="px-6 py-4 flex gap-2">
-                          <button onClick={() => handleSave(expense.id)} className="bg-green-500 text-white px-3 py-1 rounded">
-                            Sauvegarder
-                          </button>
-                          <button onClick={() => setEditId(null)} className="bg-gray-500 text-white px-3 py-1 rounded">
-                            Annuler
-                          </button>
-                        </td>
-                      </>
-                    ) : (
-                      <>
-                        <td className="px-6 py-4">{expense.title}</td>
-                        {/*Nom de la catégories*/}
-                        <td className="px-6 py-4">{expense.category ? expense.category.name : "Inconnue"}</td>
-                        <td className="px-6 py-4">{displayDate}</td>
-                        <td className="px-6 py-4">
-                          <span className={expense.type.toLowerCase() === "ponctuelle" ? textTypePonctuelle : textTypeRecurrente}>
-                            {expense.type}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-red-600 font-medium">{expense.amount.toFixed(2)} €</td>
-                        <td className="px-6 py-4 flex gap-2">
-                          <button 
-                            onClick={() => { 
-                              setEditId(expense.id); 
-                              setEditData({ amount: expense.amount }); 
-                            }} 
-                            className="text-blue-600 hover:text-blue-900"
-                          >
-                            Modifier
-                          </button>
-                          <button 
-                            onClick={() => handleDelete(expense.id)} 
-                            className="text-red-600 hover:text-red-900"
-                          >
-                            Supprimer
-                          </button>
-                        </td>
-                      </>
-                    )}
-                  </tr>
-                );
-              })}
+              {expenses.map(expense => (
+                <tr key={expense.id}>
+                  {editId === expense.id ? (
+                    <>
+                      <td className="px-6 py-4">{expense.title}</td>
+                      <td className="px-6 py-4">{expense.category?.name || "Inconnue"}</td>
+                      <td className="px-6 py-4">{getDisplayDate(expense)}</td>
+                      <td className="px-6 py-4">
+                        <span className={expense.type === "Ponctuelle" ? textTypePonctuelle : textTypeRecurrente}>{expense.type}</span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <input type="number" name="amount" value={editData.amount || ""} onChange={handleChange} className="border px-2 py-1 rounded w-full text-black" />
+                      </td>
+                      <td className="px-6 py-4 flex gap-2">
+                        <button onClick={() => handleSave(expense.id)} className="bg-green-500 text-white px-3 py-1 rounded">Sauvegarder</button>
+                        <button onClick={() => setEditId(null)} className="bg-gray-500 text-white px-3 py-1 rounded">Annuler</button>
+                      </td>
+                    </>
+                  ) : (
+                    <>
+                      <td className="px-6 py-4">{expense.title}</td>
+                      <td className="px-6 py-4">{expense.category?.name || "Inconnue"}</td>
+                      <td className="px-6 py-4">{getDisplayDate(expense)}</td>
+                      <td className="px-6 py-4">
+                        <span className={expense.type.toLowerCase() === "ponctuelle" ? textTypePonctuelle : textTypeRecurrente}>{expense.type}</span>
+                      </td>
+                      <td className="px-6 py-4 text-red-600 font-medium">{expense.amount.toFixed(2)} €</td>
+                      <td className="px-6 py-4 flex gap-2 items-center">
+                        <button onClick={() => { setEditId(expense.id); setEditData({ amount: expense.amount }); }} className="text-blue-600 hover:text-blue-900">Modifier</button>
+                        <button onClick={() => handleDelete(expense.id)} className="text-red-600 hover:text-red-900">Supprimer</button>
+                        <button onClick={() => downloadReceipt(expense)} className="flex items-center gap-1 text-green-600 hover:text-green-900"><Download size={16} /> Reçu</button>
+                      </td>
+                    </>
+                  )}
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>

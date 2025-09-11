@@ -17,106 +17,92 @@ function ExpenseTracker() {
   const userId = 1;
   const API_URL = "http://localhost:5000/api";
 
-  // Charger les dépenses
+
   useEffect(() => {
     const token = localStorage.getItem("token");
 
-    const fetchIncomes = async () => {
-      const res = await fetch(`${API_URL}/incomes`, {
+  // 🌙 Thème : récupérer depuis localStorage dès le premier rendu
+  const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem("darkMode") === "true");
+
+
+  useEffect(() => {
+    if (isDarkMode) document.documentElement.classList.add("dark");
+    else document.documentElement.classList.remove("dark");
+  }, [isDarkMode]);
+
+  const toggleDarkMode = () => {
+    setIsDarkMode(prev => {
+      localStorage.setItem("darkMode", !prev);
+      return !prev;
+    });
+  };
+
+  // Charger catégories depuis l'API
+  const fetchCategories = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_URL}/categories`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
-      if (data.success) setIncomes(data.incomes);
-    };
+      setCategories(data);
+    } catch (error) {
+      console.error("Erreur lors du chargement des catégories:", error);
+    }
+  };
 
-    const fetchExpenses = async () => {
+  // Charger dépenses depuis l'API
+  const fetchExpenses = async () => {
+    try {
+      const token = localStorage.getItem("token");
       const res = await fetch(`${API_URL}/expenses`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
-      if (data.success) setExpenses(data.expenses);
-    };
-
-    const fetchCategories = async () => {
-      try {
-        const res = await fetch(`${API_URL}/categories?userId=${userId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const data = await res.json();
-        setCategories(data);
-      } catch (error) {
-        console.error("Erreur lors du chargement des catégories:", error);
-      }
-    };
+      setExpenses(data);
+    } catch (error) {
+      console.error("Erreur lors du chargement des dépenses:", error);
+    }
+  };
 
     fetchIncomes();
     fetchExpenses();
     fetchCategories();
+    fetchExpenses();
   }, []);
 
   const handleAddExpense = (expenseData) => {
+    // Ajouter localement
     setExpenses(prev => [...prev, expenseData]);
+    // Recharger toutes les dépenses pour être sûr qu'elles sont bien persistées
+    fetchExpenses();
   };
 
-  const handleDeleteExpense = (id) => {
-    setExpenses(prev => prev.filter(e => e.id !== id));
-  };
+  const handleDeleteExpense = (id) => setExpenses(prev => prev.filter(e => e.id !== id));
+  const handleUpdateExpense = (updatedExpense) =>
+    setExpenses(prev => prev.map(e => e.id === updatedExpense.id ? updatedExpense : e));
 
-  const handleUpdateExpense = (updatedExpense) => {
-    setExpenses(prev => prev.map(e => 
-      e.id === updatedExpense.id ? updatedExpense : e
-    ));
-  };
+  const handleAddIncome = (incomeData) => setIncomes(prev => [...prev, { id: incomes.length + 1, ...incomeData }]);
 
-  const handleAddIncome = (newIncome) => {
-    setIncomes(prev => [newIncome, ...prev]);
-  };
-
-  const handleDeleteIncome = (id) => {
-    setIncomes(prev => prev.filter(income => income.id !== id));
-  };
-
-  const handleUpdateIncome = (updatedIncome) => {
-    setIncomes(prev =>
-      prev.map(income => income.id === updatedIncome.id ? updatedIncome : income)
-    );
-  };
-
-  const toggleDarkMode = () => setIsDarkMode(!isDarkMode);
-
-  useEffect(() => {
-    if (isDarkMode) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-    localStorage.setItem("darkMode", isDarkMode);
-  }, [isDarkMode]);
-
-  const totalExpenses = expenses.reduce((t, e) => t + e.amount, 0);
-
-  const renderActiveSection = () => {
+  const renderSection = () => {
     switch(activeSection) {
-      case "dashboard": 
-        return <Dashboard 
-                  expenses={expenses} 
-                  incomes={incomes}  // <-- correction ici
-                  totalExpenses={totalExpenses} 
-                  isDarkMode={isDarkMode} 
-               />;
-      case "expenses": 
-        return (
+      case "dashboard":
+        return <Dashboard expenses={expenses} incomes={incomes} categories={categories} isDarkMode={isDarkMode} />;
+      case "expenses":
+        return categories.length > 0 ? (
           <ExpensesList 
             expenses={expenses} 
             onDelete={handleDeleteExpense} 
-            onUpdate={handleUpdateExpense}
-            categories={categories}
+            onUpdate={handleUpdateExpense} 
+            categories={categories} 
             isDarkMode={isDarkMode} 
           />
-        );
-      case "add": 
-        return <AddExpense categories={categories} onAdd={handleAddExpense} isDarkMode={isDarkMode} userId={userId} />;
-      case "categories": 
+        ) : null;
+      case "add":
+        return categories.length > 0 ? (
+          <AddExpense categories={categories} onAdd={handleAddExpense} isDarkMode={isDarkMode} />
+        ) : null;
+      case "categories":
         return <Categories categories={categories} setCategories={setCategories} isDarkMode={isDarkMode} />;
       case "incomes": 
         return (
@@ -131,15 +117,10 @@ function ExpenseTracker() {
         return <AddIncome onAdd={handleAddIncome} isDarkMode={isDarkMode} />;
       case "reports": 
         return <Reports expenses={expenses} isDarkMode={isDarkMode} />;
-      case "settings": 
+      case "settings":
         return <Settings isDarkMode={isDarkMode} />;
-      default: 
-        return <Dashboard 
-                  expenses={expenses} 
-                  incomes={incomes} 
-                  totalExpenses={totalExpenses} 
-                  isDarkMode={isDarkMode} 
-               />;
+      default:
+        return <Dashboard expenses={expenses} incomes={incomes} categories={categories} isDarkMode={isDarkMode} />;
     }
   };
 
@@ -155,7 +136,7 @@ function ExpenseTracker() {
             Gérez vos finances facilement
           </p>
         </header>
-        {renderActiveSection()}
+        {renderSection()}
       </div>
     </div>
   );
