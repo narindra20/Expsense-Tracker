@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import React, { useState, useEffect } from "react";
 import Sidebar from "./components/Sidebar";
 import Dashboard from "./components/Dashboard";
@@ -92,21 +93,27 @@ function ExpenseTracker() {
     localStorage.setItem("darkMode", isDarkMode);
   }, [isDarkMode]);
 
-  const totalExpenses = expenses.reduce((t, e) => t + e.amount, 0);
+  // Filtrer les dépenses pour l'affichage
+const ponctualExpenses = expenses.filter(e => e.type?.toLowerCase() === "ponctuelle");
+const recurrentExpenses = expenses.filter(e => e.type?.toLowerCase() === "recurrente");
 
-  const renderActiveSection = () => {
-    switch(activeSection) {
-      case "dashboard": 
-        return <Dashboard 
-                  expenses={expenses} 
-                  incomes={incomes}  // <-- correction ici
-                  totalExpenses={totalExpenses} 
-                  isDarkMode={isDarkMode} 
-               />;
+// Mais garder le total de TOUTES les dépenses pour le calcul du solde
+const totalExpenses = expenses.reduce((t, e) => t + e.amount, 0);
+const totalPonctualExpenses = ponctualExpenses.reduce((t, e) => t + e.amount, 0);
+
+const renderActiveSection = () => {
+  switch(activeSection) {
+    case "dashboard": 
+      return <Dashboard 
+                expenses={ponctualExpenses} // Seulement les ponctuelles pour l'affichage
+                incomes={incomes}
+                totalExpenses={totalExpenses} // Mais le total de TOUTES les dépenses pour le calcul
+                isDarkMode={isDarkMode} 
+             />;
       case "expenses": 
         return (
           <ExpensesList 
-            expenses={expenses} 
+            expenses={expenses} // Toutes les dépenses
             onDelete={handleDeleteExpense} 
             onUpdate={handleUpdateExpense}
             categories={categories}
@@ -120,9 +127,9 @@ function ExpenseTracker() {
       case "incomes": 
         return (
           <IncomesList 
-            incomes={incomes}  // <-- correction ici
-            onDelete={handleDeleteIncome}  // <-- correction ici
-            onUpdate={handleUpdateIncome}  // <-- correction ici
+            incomes={incomes}
+            onDelete={handleDeleteIncome}
+            onUpdate={handleUpdateIncome}
             isDarkMode={isDarkMode} 
           />
         );
@@ -134,9 +141,9 @@ function ExpenseTracker() {
         return <Settings isDarkMode={isDarkMode} />;
       default: 
         return <Dashboard 
-                  expenses={expenses} 
-                  incomes={incomes} 
-                  totalExpenses={totalExpenses} 
+                  expenses={ponctualExpenses} // Seulement les dépenses ponctuelles
+                  incomes={incomes}
+                  totalExpenses={totalPonctualExpenses} // Total des dépenses ponctuelles
                   isDarkMode={isDarkMode} 
                />;
     }
@@ -154,7 +161,7 @@ function ExpenseTracker() {
             Gérez vos finances facilement
           </p>
         </header>
-        {renderActiveSection()}
+        {renderActiveSection()}  
       </div>
     </div>
   );
