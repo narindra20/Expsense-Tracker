@@ -3,6 +3,7 @@ import React, { useState } from "react";
 function AddIncome({ onAdd, isDarkMode }) {
   const initial = {
     title: "",
+    source: "",
     amount: "",
     date: new Date().toISOString().split("T")[0],
     description: "",
@@ -16,7 +17,9 @@ function AddIncome({ onAdd, isDarkMode }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!income.title || !income.amount) return;
+    if (!income.title || !income.amount || !income.source) {
+      return alert("Veuillez remplir le titre, la source et le montant.");
+    }
 
     const token = localStorage.getItem("token");
     if (!token) return alert("Vous devez être connecté pour ajouter un revenu.");
@@ -30,6 +33,7 @@ function AddIncome({ onAdd, isDarkMode }) {
         },
         body: JSON.stringify({
           title: income.title,
+          source: income.source,
           amount: parseFloat(income.amount),
           date: income.date,
           description: income.description || "",
@@ -72,6 +76,15 @@ function AddIncome({ onAdd, isDarkMode }) {
             type="text"
             placeholder="Titre"
             value={income.title}
+            onChange={handleChange}
+            className={inputClass}
+            required
+          />
+          <input
+            name="source"
+            type="text"
+            placeholder="Source (Salaire, Business, ...)"
+            value={income.source}
             onChange={handleChange}
             className={inputClass}
             required

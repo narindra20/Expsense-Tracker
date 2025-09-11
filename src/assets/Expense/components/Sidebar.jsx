@@ -19,7 +19,7 @@ function Sidebar({ activeSection, setActiveSection, isDarkMode, toggleDarkMode }
     { id: "expenses", label: "Mes Dépenses", icon: <Wallet /> },
     { id: "add", label: "Ajouter une Dépense", icon: <PlusCircle /> },
     { id: "categories", label: "Catégories", icon: <Tag /> },
-    { id: "reports", label: "Rapports", icon: <BarChart /> },
+    { id: "incomes", label: "Mes Revenus", icon: <Wallet /> },
     { id: "addIncome", label: "Ajouter un Revenu", icon: <PlusCircle /> },
     { id: "settings", label: "Paramètres", icon: <Lock/> },
 
