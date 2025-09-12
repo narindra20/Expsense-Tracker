@@ -44,7 +44,7 @@ function Sidebar({ activeSection, setActiveSection, isDarkMode, toggleDarkMode }
 
   return (
     <div className="w-64 h-full flex flex-col p-4 bg-gray-200 dark:bg-gray-800 text-gray-900 dark:text-white transition-colors">
-      <h2 className="text-xl font-bold text-indigo-600 dark:text-indigo-400 mb-6">Mon Budget</h2>
+      <h2 className="text-xl font-bold text-indigo-600 dark:text-indigo-400 mb-6">Expense Tracker</h2>
 
       {/* Menu */}
       <nav className="flex-1">
