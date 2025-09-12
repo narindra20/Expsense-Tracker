@@ -28,8 +28,7 @@ function ExpenseTracker() {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
-      // Vérifier que data.categories existe
-      setCategories(data.categories || data || []);
+      setCategories(data?.categories || data || []);
     } catch (error) {
       console.error("Erreur lors du chargement des catégories:", error);
       setCategories([]);
@@ -44,8 +43,7 @@ function ExpenseTracker() {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
-      // Si l'API renvoie un tableau, sinon []
-      setExpenses(Array.isArray(data) ? data : data.expenses || []);
+      setExpenses(Array.isArray(data) ? data : data?.expenses || []);
     } catch (error) {
       console.error("Erreur lors du chargement des dépenses:", error);
       setExpenses([]);
@@ -60,8 +58,7 @@ function ExpenseTracker() {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
-      // Vérifier que data.incomes existe
-      setIncomes(data.incomes || []);
+      setIncomes(data?.incomes || []);
     } catch (error) {
       console.error("Erreur lors du chargement des revenus:", error);
       setIncomes([]);
@@ -80,17 +77,23 @@ function ExpenseTracker() {
     localStorage.setItem("darkMode", isDarkMode);
   }, [isDarkMode]);
 
+  // Debug : voir l'état des données
+  useEffect(() => {
+    console.log("Incomes:", incomes);
+    console.log("Expenses:", expenses);
+  }, [incomes, expenses]);
+
   // Filtrer les dépenses
   const ponctualExpenses = expenses.filter(
-    (e) => e.type?.toLowerCase() === "ponctuelle"
+    (e) => e?.type?.toLowerCase() === "ponctuelle"
   );
   const recurrentExpenses = expenses.filter(
-    (e) => e.type?.toLowerCase() === "recurrente"
+    (e) => e?.type?.toLowerCase() === "recurrente"
   );
 
-  const totalExpenses = expenses.reduce((t, e) => t + (e.amount || 0), 0);
+  const totalExpenses = expenses.reduce((t, e) => t + (e?.amount || 0), 0);
   const totalPonctualExpenses = ponctualExpenses.reduce(
-    (t, e) => t + (e.amount || 0),
+    (t, e) => t + (e?.amount || 0),
     0
   );
 
@@ -110,14 +113,16 @@ function ExpenseTracker() {
           <ExpensesList
             expenses={expenses}
             onDelete={(id) =>
-              setExpenses((prev) => prev.filter((e) => e.id !== id))
+              setExpenses((prev) => prev.filter((e) => e?.id !== id))
             }
             onUpdate={(updatedExpense) =>
-              setExpenses((prev) =>
-                prev.map((e) =>
-                  e.id === updatedExpense.id ? updatedExpense : e
-                )
-              )
+              updatedExpense?.id
+                ? setExpenses((prev) =>
+                    prev.map((e) =>
+                      e?.id === updatedExpense.id ? updatedExpense : e
+                    )
+                  )
+                : console.warn("Mise à jour ignorée, dépense invalide:", updatedExpense)
             }
             categories={categories}
             isDarkMode={isDarkMode}
@@ -127,9 +132,13 @@ function ExpenseTracker() {
         return categories.length > 0 ? (
           <AddExpense
             categories={categories}
-            onAdd={(expenseData) =>
-              setExpenses((prev) => [...prev, expenseData])
-            }
+            onAdd={(expenseData) => {
+              if (!expenseData || !expenseData.id) {
+                console.warn("Ajout ignoré, dépense invalide:", expenseData);
+                return;
+              }
+              setExpenses((prev) => [...prev, expenseData]);
+            }}
             isDarkMode={isDarkMode}
           />
         ) : null;
@@ -146,14 +155,16 @@ function ExpenseTracker() {
           <IncomesList
             incomes={incomes}
             onDelete={(id) =>
-              setIncomes((prev) => prev.filter((i) => i.id !== id))
+              setIncomes((prev) => prev.filter((i) => i?.id !== id))
             }
             onUpdate={(updatedIncome) =>
-              setIncomes((prev) =>
-                prev.map((i) =>
-                  i.id === updatedIncome.id ? updatedIncome : i
-                )
-              )
+              updatedIncome?.id
+                ? setIncomes((prev) =>
+                    prev.map((i) =>
+                      i?.id === updatedIncome.id ? updatedIncome : i
+                    )
+                  )
+                : console.warn("Mise à jour ignorée, revenu invalide:", updatedIncome)
             }
             isDarkMode={isDarkMode}
           />
@@ -161,9 +172,13 @@ function ExpenseTracker() {
       case "addIncome":
         return (
           <AddIncome
-            onAdd={(newIncome) =>
-              setIncomes((prev) => [newIncome, ...prev])
-            }
+            onAdd={(newIncome) => {
+              if (!newIncome || !newIncome.id) {
+                console.warn("Ajout ignoré, revenu invalide:", newIncome);
+                return;
+              }
+              setIncomes((prev) => [newIncome, ...prev]);
+            }}
             isDarkMode={isDarkMode}
           />
         );
@@ -202,7 +217,11 @@ function ExpenseTracker() {
           >
             Suivi de Dépenses Personnelles
           </h1>
-          <p className={`text-gray-600 ${isDarkMode ? "dark:text-gray-300" : ""}`}>
+          <p
+            className={`text-gray-600 ${
+              isDarkMode ? "dark:text-gray-300" : ""
+            }`}
+          >
             Gérez vos finances facilement
           </p>
         </header>

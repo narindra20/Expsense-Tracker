@@ -4,21 +4,24 @@ import { useNavigate, Link } from "react-router-dom";
 
 export default function SignUp() {
   const navigate = useNavigate();
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [form, setForm] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    password: "",
+  });
   const [message, setMessage] = useState("");
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+    setMessage(""); // efface le message quand l'utilisateur change quelque chose
+  };
 
   const handleSignup = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post("http://localhost:5000/signup", {
-        firstName,
-        lastName,
-        email,
-        password,
-      });
+      const response = await axios.post("http://localhost:5000/signup", form);
 
       if (response.data.success) {
         setMessage("Compte créé avec succès !");
@@ -32,54 +35,62 @@ export default function SignUp() {
     }
   };
 
+  const inputClass = "w-full px-4 py-3 border rounded-md";
+
   return (
     <div className="bg-white shadow-xl rounded-lg p-10 w-full max-w-md mt-10 mx-auto">
       <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">
         Créer un nouveau compte
       </h2>
+
       <form className="flex flex-col gap-4" onSubmit={handleSignup}>
         <div className="flex gap-4">
           <input
             type="text"
+            name="firstName"
             placeholder="Prénom"
-            value={firstName}
-            onChange={(e) => setFirstName(e.target.value)}
+            value={form.firstName}
+            onChange={handleChange}
             className="w-1/2 px-4 py-3 border rounded-md"
             required
           />
           <input
             type="text"
+            name="lastName"
             placeholder="Nom"
-            value={lastName}
-            onChange={(e) => setLastName(e.target.value)}
+            value={form.lastName}
+            onChange={handleChange}
             className="w-1/2 px-4 py-3 border rounded-md"
             required
           />
         </div>
+
         <input
           type="email"
+          name="email"
           placeholder="E-mail"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="px-4 py-3 border rounded-md"
+          value={form.email}
+          onChange={handleChange}
+          className={inputClass}
           required
         />
         <input
           type="password"
+          name="password"
           placeholder="Mot de passe"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="px-4 py-3 border rounded-md"
+          value={form.password}
+          onChange={handleChange}
+          className={inputClass}
           required
         />
-        <button
-          type="submit"
-          className="bg-gray-500 text-white font-bold py-3 rounded-md"
-        >
+
+        <button type="submit" className="bg-gray-500 text-white font-bold py-3 rounded-md">
           S’inscrire
         </button>
       </form>
+
       {message && <div className="text-center mt-4 text-red-500">{message}</div>}
+
       <div className="text-center mt-4">
         <Link to="/" className="text-gray-600 text-sm hover:underline">
           Vous avez déjà un compte ?

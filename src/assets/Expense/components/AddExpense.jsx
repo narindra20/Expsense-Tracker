@@ -1,19 +1,19 @@
 import React, { useState, useEffect } from "react";
 
 function AddExpense({ categories = [], onAdd, isDarkMode }) {
-  const initial = {
-    title: "", 
-    amount: "", 
-    category: categories[0]?.id || "", 
+  const initialExpense = {
+    title: "",
+    amount: "",
+    category: categories[0]?.id || "",
+    type: "Ponctuelle",
     date: new Date().toISOString().split("T")[0],
-    type: "Ponctuelle", 
-    startDate: new Date().toISOString().split("T")[0], 
-    endDate: "", 
-    description: "", 
-    receipt: null
+    startDate: new Date().toISOString().split("T")[0],
+    endDate: "",
+    description: "",
+    receipt: null,
   };
 
-  const [expense, setExpense] = useState(initial);
+  const [expense, setExpense] = useState(initialExpense);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -34,15 +34,16 @@ function AddExpense({ categories = [], onAdd, isDarkMode }) {
 
   const handleSubmit = async e => {
     e.preventDefault();
-    if (!expense.title || !expense.amount) { 
-      setError("Veuillez remplir le titre et le montant."); 
-      return; 
+
+    if (!expense.title || !expense.amount) {
+      setError("Veuillez remplir le titre et le montant.");
+      return;
     }
-    
+
     const amount = parseFloat(expense.amount);
-    if (isNaN(amount) || amount <= 0) { 
-      setError("Le montant doit être un nombre valide supérieur à 0."); 
-      return; 
+    if (isNaN(amount) || amount <= 0) {
+      setError("Le montant doit être un nombre supérieur à 0.");
+      return;
     }
 
     try {
@@ -53,167 +54,151 @@ function AddExpense({ categories = [], onAdd, isDarkMode }) {
       formData.append("title", expense.title);
       formData.append("amount", amount);
       formData.append("categoryId", expense.category);
-      formData.append("description", expense.description || "");
       formData.append("type", expense.type);
+      formData.append("description", expense.description || "");
       
-      if (expense.type === "Ponctuelle") {
-        formData.append("date", expense.date);
-      } else { 
-        formData.append("startDate", expense.startDate); 
-        if (expense.endDate) formData.append("endDate", expense.endDate); 
+      if (expense.type === "Ponctuelle") formData.append("date", expense.date);
+      else {
+        formData.append("startDate", expense.startDate);
+        if (expense.endDate) formData.append("endDate", expense.endDate);
       }
-      
+
       if (expense.receipt) formData.append("receipt", expense.receipt);
 
-      const response = await fetch("http://localhost:5000/api/expenses", {
+      const res = await fetch("http://localhost:5000/api/expenses", {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
-        body: formData
+        body: formData,
       });
 
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.message || "Erreur serveur");
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Erreur serveur");
+
       onAdd(data);
-      setExpense(initial);
+      setExpense(initialExpense);
     } catch (err) {
-      setError("Erreur lors de l'ajout : " + err.message);
+      setError("Erreur : " + err.message);
     }
   };
 
-  const containerClass = isDarkMode 
-    ? "p-6 max-w-3xl mx-auto bg-gray-800 text-white rounded-2xl shadow-lg" 
+  const containerClass = isDarkMode
+    ? "p-6 max-w-3xl mx-auto bg-gray-800 text-white rounded-2xl shadow-lg"
     : "p-6 max-w-3xl mx-auto bg-indigo-50 text-gray-900 rounded-2xl shadow-lg";
-  
-  const inputClass = isDarkMode 
-    ? "border border-gray-600 bg-gray-700 text-white rounded-xl px-4 py-3" 
+
+  const inputClass = isDarkMode
+    ? "border border-gray-600 bg-gray-700 text-white rounded-xl px-4 py-3"
     : "border border-gray-300 bg-white text-gray-900 rounded-xl px-4 py-3";
-  
-  const buttonClass = isDarkMode 
-    ? "bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-3 rounded-2xl shadow-lg" 
+
+  const buttonClass = isDarkMode
+    ? "bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-3 rounded-2xl shadow-lg"
     : "bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white px-6 py-3 rounded-2xl shadow-lg";
 
   return (
     <div className={containerClass}>
       <h2 className="text-3xl font-bold mb-6 text-center text-indigo-700">Ajouter une dépense</h2>
+
       {error && <div className="mb-4 p-3 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-200 rounded">{error}</div>}
-      
+
       <form onSubmit={handleSubmit} className="space-y-4">
+
+        {/* Titre, montant, catégorie */}
         <div className="flex flex-wrap gap-4">
-          <input 
-            name="title" 
-            type="text" 
-            placeholder="Titre *" 
-            value={expense.title} 
-            onChange={handleChange} 
-            className={inputClass} 
-            required 
+          <input
+            name="title"
+            type="text"
+            placeholder="Titre *"
+            value={expense.title}
+            onChange={handleChange}
+            className={inputClass}
+            required
           />
-          <input 
-            name="amount" 
-            type="number" 
-            step="0.01" 
-            placeholder="Montant (€) *" 
-            value={expense.amount} 
-            onChange={handleChange} 
-            className={inputClass + " w-40"} 
-            required 
+          <input
+            name="amount"
+            type="number"
+            step="0.01"
+            placeholder="Montant (€) *"
+            value={expense.amount}
+            onChange={handleChange}
+            className={inputClass + " w-40"}
+            required
           />
-          <select 
-            name="category" 
-            value={expense.category} 
-            onChange={handleChange} 
-            className={inputClass + " w-44"} 
+          <select
+            name="category"
+            value={expense.category}
+            onChange={handleChange}
+            className={inputClass + " w-44"}
             required
           >
-            {categories.map(cat => (
-              <option key={cat.id} value={cat.id}>{cat.name}</option>
-            ))}
+            {categories.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
           </select>
         </div>
 
+        {/* Type : Ponctuelle ou Récurrente */}
         <div className="flex gap-6 items-center">
-          <label className="flex items-center gap-2">
-            <input 
-              type="radio" 
-              name="type" 
-              value="Ponctuelle" 
-              checked={expense.type === "Ponctuelle"} 
-              onChange={handleChange} 
-            /> 
-            Ponctuelle
-          </label>
-          <label className="flex items-center gap-2">
-            <input 
-              type="radio" 
-              name="type" 
-              value="Récurrente" 
-              checked={expense.type === "Récurrente"} 
-              onChange={handleChange} 
-            /> 
-            Récurrente
-          </label>
+          {["Ponctuelle", "Récurrente"].map(type => (
+            <label key={type} className="flex items-center gap-2">
+              <input
+                type="radio"
+                name="type"
+                value={type}
+                checked={expense.type === type}
+                onChange={handleChange}
+              />
+              {type}
+            </label>
+          ))}
         </div>
 
+        {/* Dates selon type */}
         {expense.type === "Ponctuelle" && (
-          <div>
-            <label className="block mb-2">Date de la dépense *</label>
-            <input 
-              name="date" 
-              type="date" 
-              value={expense.date} 
-              onChange={handleChange} 
-              className={inputClass} 
-              required 
-            />
-          </div>
+          <input
+            name="date"
+            type="date"
+            value={expense.date}
+            onChange={handleChange}
+            className={inputClass}
+            required
+          />
         )}
 
         {expense.type === "Récurrente" && (
           <div className="space-y-4">
-            <div>
-              <label className="block mb-2">Date de début *</label>
-              <input 
-                name="startDate" 
-                type="date" 
-                value={expense.startDate} 
-                onChange={handleChange} 
-                className={inputClass} 
-                required 
-              />
-            </div>
-            <div>
-              <label className="block mb-2">Date de fin (optionnelle)</label>
-              <input 
-                name="endDate" 
-                type="date" 
-                value={expense.endDate} 
-                onChange={handleChange} 
-                className={inputClass} 
-              />
-            </div>
+            <input
+              name="startDate"
+              type="date"
+              value={expense.startDate}
+              onChange={handleChange}
+              className={inputClass}
+              required
+            />
+            <input
+              name="endDate"
+              type="date"
+              value={expense.endDate}
+              onChange={handleChange}
+              className={inputClass}
+            />
           </div>
         )}
 
-        <input 
-          name="description" 
-          type="text" 
-          placeholder="Description" 
-          value={expense.description} 
-          onChange={handleChange} 
-          className={inputClass + " w-full"} 
+        {/* Description et justificatif */}
+        <input
+          name="description"
+          type="text"
+          placeholder="Description"
+          value={expense.description}
+          onChange={handleChange}
+          className={inputClass + " w-full"}
         />
-        
-        <input 
-          type="file" 
-          name="receipt" 
-          accept=".jpg,.jpeg,.png,.pdf" 
-          onChange={handleChange} 
-          className={inputClass} 
+        <input
+          type="file"
+          name="receipt"
+          accept=".jpg,.jpeg,.png,.pdf"
+          onChange={handleChange}
+          className={inputClass}
         />
 
-        <button type="submit" className={buttonClass}>
-          Ajouter la dépense
-        </button>
+        <button type="submit" className={buttonClass}>Ajouter la dépense</button>
       </form>
     </div>
   );
