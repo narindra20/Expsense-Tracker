@@ -87,7 +87,7 @@ Project developed by:
 
 - [@narindra20](https://github.com/narindra20)
 - [@AngelaHarim](https://github.com/Angela-Harim)
-- [@lovaFY](https://github.com/lovaFy)
+- [@FitiavanaLova](https://github.com/FitiavanaLova/)
 
 ---
 
